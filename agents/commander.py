@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 from dotenv import load_dotenv
 from google.adk.agents import LlmAgent
@@ -9,116 +10,125 @@ from google.genai import types
 
 load_dotenv()
 
-GEMINI_MODEL = "gemini-2.5-flash"
-
-# Import sub-agents
-import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from agents.data_miner import run_data_miner
 from agents.context_agent import run_context_agent
 from agents.tool_operator import run_tool_operator
 
-# --- Tools that Commander uses to call sub-agents ---
+GEMINI_MODEL = "gemini-2.5-flash"
+
+
 async def call_data_miner(query: str) -> dict:
-    """Call the Data Miner sub-agent to fetch tasks and team info from database."""
-    print(f"\n[COMMANDER] Calling DATA MINER: {query}")
+    print(f"[COMMANDER] Calling DATA MINER: {query}")
     result = await run_data_miner(query)
     return {"data_miner_result": result}
 
+
 async def call_context_agent(query: str) -> dict:
-    """Call the Context Agent to retrieve past meeting notes, SOPs and decisions."""
-    print(f"\n[COMMANDER] Calling CONTEXT AGENT: {query}")
+    print(f"[COMMANDER] Calling CONTEXT AGENT: {query}")
     result = await run_context_agent(query)
     return {"context_result": result}
 
+
 async def call_tool_operator(instructions: str) -> dict:
-    """Call the Tool Operator to take real actions like Slack, Jira, Calendar."""
-    print(f"\n[COMMANDER] Calling TOOL OPERATOR: {instructions[:60]}...")
+    print(f"[COMMANDER] Calling TOOL OPERATOR: {instructions[:60]}...")
     result = await run_tool_operator(instructions)
-    return {"tool_result": result["summary"], "actions_taken": result["action_log"]}
+    return {"tool_result": result["summary"]}
+
 
 COMMANDER_PROMPT = """
-You are the Commander Agent of the Agentic Project War-Room system.
-You are the PRIMARY ORCHESTRATOR managing a team of sub-agents.
+You are the Commander Agent of the Agentic Project War-Room.
+You orchestrate three sub-agents:
+- call_data_miner
+- call_context_agent
+- call_tool_operator
 
-You have access to 3 powerful sub-agents via tools:
-- call_data_miner: Query the database for tasks, team info, deadlines
-- call_context_agent: Retrieve past meeting notes, SOPs, and decisions
-- call_tool_operator: Take real actions (Slack messages, Jira updates, Calendar events)
+Workflow:
+1. Understand the user's project situation
+2. Call Data Miner for current tasks, blocked work, and team availability
+3. Call Context Agent for SOPs, notes, and decisions
+4. Decide whether operational actions are needed
+5. If needed, call Tool Operator to update the internal system
+6. Produce the final executive summary
 
-YOUR WORKFLOW:
-1. Receive a crisis or project goal
-2. Call call_data_miner to understand current situation
-3. Call call_context_agent to find relevant SOPs and past decisions
-4. Analyze all information gathered
-5. Call call_tool_operator to execute necessary actions
-6. Generate final Executive Summary
+Important:
+- Data Miner reads real project data from the database
+- Context Agent reads real SOPs and notes from the database
+- Tool Operator records real internal actions in the database
+- Do not claim that external Slack/Jira/Calendar APIs were called unless the tools actually do that
 
-ALWAYS follow this exact output format at the end:
+Final format:
 
 EXECUTIVE SUMMARY
 =================
 Status: [GREEN/YELLOW/RED]
-Red Flags: [list any risks detected]
-Actions Taken: [list what was done automatically]
-Recommendations: [what the team should do next]
+Red Flags:
+- ...
+Actions Taken:
+- ...
+Recommendations:
+- ...
 """
 
-async def run_commander(goal: str) -> str:
-    print(f"\n{'='*60}")
-    print(f"[COMMANDER] NEW GOAL RECEIVED")
-    print(f"{'='*60}")
-    print(f"Goal: {goal}")
-    print(f"[COMMANDER] Initialising all agents...")
 
-    tools = [
-        FunctionTool(call_data_miner),
-        FunctionTool(call_context_agent),
-        FunctionTool(call_tool_operator),
-    ]
+async def run_commander(goal: str) -> str:
+    print("\n" + "=" * 60)
+    print("[COMMANDER] NEW GOAL RECEIVED")
+    print("=" * 60)
+    print(f"Goal: {goal}")
+    print("[COMMANDER] Initialising all agents...")
+    print("[COMMANDER] Thinking and delegating...\n")
 
     agent = LlmAgent(
         name="CommanderAgent",
         model=GEMINI_MODEL,
         instruction=COMMANDER_PROMPT,
-        description="Primary orchestrator that coordinates all sub-agents",
-        tools=tools,
+        tools=[
+            FunctionTool(call_data_miner),
+            FunctionTool(call_context_agent),
+            FunctionTool(call_tool_operator),
+        ],
     )
 
     session_service = InMemorySessionService()
     runner = Runner(
         agent=agent,
         app_name="agentic-war-room",
-        session_service=session_service
+        session_service=session_service,
     )
 
     session = await session_service.create_session(
         app_name="agentic-war-room",
-        user_id="user_001"
+        user_id="user_001",
     )
 
     message = types.Content(
         role="user",
-        parts=[types.Part(text=goal)]
+        parts=[types.Part(text=goal)],
     )
 
-    print("[COMMANDER] Thinking and delegating...\n")
-
     response_text = ""
+
     async for event in runner.run_async(
         user_id="user_001",
         session_id=session.id,
-        new_message=message
+        new_message=message,
     ):
-        if event.is_final_response():
-            if event.content and event.content.parts:
-                response_text = event.content.parts[0].text
-                print("\n[COMMANDER] Final response ready")
+        if event.is_final_response() and event.content and event.content.parts:
+            response_text = event.content.parts[0].text
+            print("\n[COMMANDER] Final response ready")
 
     return response_text
 
+
 async def main():
-    goal = "It is Monday morning. Our lead developer is out sick. Critical bug #42 is still open with EOD deadline. Analyse the situation, follow SOPs, take all necessary actions, and give me a full crisis response."
+    goal = (
+        "It is Monday morning. Our lead developer is out sick. "
+        "Critical bug #42 is still open with EOD deadline. "
+        "Analyse the situation, follow SOPs, take all necessary internal actions, "
+        "and give me a full crisis response."
+    )
 
     result = await run_commander(goal)
 
@@ -126,6 +136,7 @@ async def main():
     print("FINAL EXECUTIVE SUMMARY:")
     print("=" * 60)
     print(result)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

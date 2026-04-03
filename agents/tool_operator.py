@@ -1,4 +1,6 @@
 import os
+import sys
+import sqlite3
 import asyncio
 from dotenv import load_dotenv
 from google.adk.agents import LlmAgent
@@ -7,151 +9,123 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.tools import FunctionTool
 from google.genai import types
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "database", "warroom.db")
 GEMINI_MODEL = "gemini-2.5-flash"
 
-# Mock action log (real Slack/Calendar/Jira baad mein connect karenge)
-ACTION_LOG = []
 
-def send_slack_message(channel: str, message: str) -> dict:
-    """Send a message to a Slack channel."""
-    action = {
-        "tool": "Slack",
-        "channel": channel,
-        "message": message,
-        "status": "sent"
-    }
-    ACTION_LOG.append(action)
-    print(f"[SLACK] #{channel}: {message[:60]}...")
-    return {"status": "success", "channel": channel, "message_sent": message}
+def _connect():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-def reassign_jira_ticket(ticket_id: str, new_assignee: str, comment: str) -> dict:
-    """Reassign a Jira ticket to a new developer."""
-    action = {
-        "tool": "Jira",
-        "ticket_id": ticket_id,
-        "new_assignee": new_assignee,
-        "comment": comment,
-        "status": "reassigned"
-    }
-    ACTION_LOG.append(action)
-    print(f"[JIRA] Ticket #{ticket_id} reassigned to {new_assignee}")
-    return {"status": "success", "ticket_id": ticket_id, "new_assignee": new_assignee}
 
-def create_calendar_event(title: str, attendees: str, duration_minutes: int, description: str) -> dict:
-    """Create a calendar event and invite attendees."""
-    action = {
-        "tool": "Calendar",
-        "title": title,
-        "attendees": attendees,
-        "duration_minutes": duration_minutes,
-        "description": description,
-        "status": "created"
-    }
-    ACTION_LOG.append(action)
-    print(f"[CALENDAR] Event created: {title} ({duration_minutes} mins) for {attendees}")
-    return {"status": "success", "event_title": title, "attendees": attendees, "duration": f"{duration_minutes} minutes"}
+def _log_action(tool: str, action: str, details: str) -> None:
+    conn = _connect()
+    conn.execute(
+        "INSERT INTO action_log (tool, action, details) VALUES (?, ?, ?)",
+        (tool, action, details),
+    )
+    conn.commit()
+    conn.close()
 
-def update_jira_status(ticket_id: str, new_status: str, comment: str) -> dict:
-    """Update the status of a Jira ticket."""
-    action = {
-        "tool": "Jira",
-        "ticket_id": ticket_id,
-        "new_status": new_status,
-        "comment": comment,
-        "status": "updated"
-    }
-    ACTION_LOG.append(action)
-    print(f"[JIRA] Ticket #{ticket_id} status updated to: {new_status}")
-    return {"status": "success", "ticket_id": ticket_id, "new_status": new_status}
+
+def reassign_task(task_id: int, new_assignee: str, reason: str) -> dict:
+    conn = _connect()
+    conn.execute(
+        "UPDATE tasks SET assignee = ? WHERE id = ?",
+        (new_assignee, task_id),
+    )
+    conn.commit()
+    conn.close()
+    details = f"Task {task_id} reassigned to {new_assignee}. Reason: {reason}"
+    _log_action("TaskManager", "reassign_task", details)
+    return {"status": "updated", "details": details}
+
+
+def update_task_status(task_id: int, new_status: str, note: str) -> dict:
+    conn = _connect()
+    conn.execute(
+        "UPDATE tasks SET status = ? WHERE id = ?",
+        (new_status, task_id),
+    )
+    conn.commit()
+    conn.close()
+    details = f"Task {task_id} status changed to {new_status}. Note: {note}"
+    _log_action("TaskManager", "update_task_status", details)
+    return {"status": "updated", "details": details}
+
+
+def record_notification(channel: str, message: str) -> dict:
+    details = f"Notification recorded for {channel}: {message}"
+    _log_action("Notification", "record_notification", details)
+    return {"status": "recorded", "details": details}
+
+
+def record_meeting(title: str, attendees: str, duration_minutes: int, description: str) -> dict:
+    details = f"Meeting recorded: {title} | Attendees: {attendees} | Duration: {duration_minutes} | Description: {description}"
+    _log_action("Calendar", "record_meeting", details)
+    return {"status": "recorded", "details": details}
+
 
 def get_action_log() -> dict:
-    """Get log of all actions taken in this session."""
-    return {"actions_taken": ACTION_LOG, "total_actions": len(ACTION_LOG)}
+    conn = _connect()
+    rows = conn.execute("SELECT * FROM action_log ORDER BY id DESC LIMIT 20").fetchall()
+    conn.close()
+    return {"actions": [dict(r) for r in rows]}
+
 
 TOOL_OPERATOR_PROMPT = """
-You are the Tool Operator sub-agent of the Agentic Project War-Room system.
-Your job is to take real actions using available tools.
-
-You have access to these tools:
-- send_slack_message: Send messages to Slack channels or users
-- reassign_jira_ticket: Reassign a Jira ticket to a new developer
-- create_calendar_event: Schedule calendar meetings
-- update_jira_status: Update status of a Jira ticket
-- get_action_log: See what actions have already been taken
-
-When given instructions, execute ALL required actions using the tools.
-After completing all actions, provide a summary of everything you did.
-Be decisive - if you are told to take an action, take it immediately.
+You are the Tool Operator.
+Use tools to make real updates inside the system database.
+Do not claim that Slack, Jira, or Calendar were actually called externally.
+If needed, record notifications and meetings as internal operational actions.
 """
 
-async def run_tool_operator(instructions: str) -> dict:
-    print(f"\n[TOOL OPERATOR] Instructions received: {instructions[:80]}...")
 
-    tools = [
-        FunctionTool(send_slack_message),
-        FunctionTool(reassign_jira_ticket),
-        FunctionTool(create_calendar_event),
-        FunctionTool(update_jira_status),
-        FunctionTool(get_action_log),
-    ]
+async def run_tool_operator(instructions: str) -> dict:
+    print(f"[TOOL OPERATOR] Instructions: {instructions[:80]}...")
 
     agent = LlmAgent(
         name="ToolOperatorAgent",
         model=GEMINI_MODEL,
         instruction=TOOL_OPERATOR_PROMPT,
-        description="Executes real actions via Slack, Jira, and Calendar tools",
-        tools=tools,
+        tools=[
+            FunctionTool(reassign_task),
+            FunctionTool(update_task_status),
+            FunctionTool(record_notification),
+            FunctionTool(record_meeting),
+            FunctionTool(get_action_log),
+        ],
     )
 
     session_service = InMemorySessionService()
-    runner = Runner(
-        agent=agent,
-        app_name="agentic-war-room",
-        session_service=session_service
-    )
+    runner = Runner(agent=agent, app_name="agentic-war-room", session_service=session_service)
+    session = await session_service.create_session(app_name="agentic-war-room", user_id="user_001")
 
-    session = await session_service.create_session(
-        app_name="agentic-war-room",
-        user_id="user_001"
-    )
-
-    message = types.Content(
-        role="user",
-        parts=[types.Part(text=instructions)]
-    )
-
+    message = types.Content(role="user", parts=[types.Part(text=instructions)])
     response_text = ""
+
     async for event in runner.run_async(
         user_id="user_001",
         session_id=session.id,
-        new_message=message
+        new_message=message,
     ):
-        if event.is_final_response():
-            if event.content and event.content.parts:
-                response_text = event.content.parts[0].text
-                print("[TOOL OPERATOR] All actions completed")
+        if event.is_final_response() and event.content and event.content.parts:
+            response_text = event.content.parts[0].text
+            print("[TOOL OPERATOR] Done")
 
-    return {"summary": response_text, "action_log": ACTION_LOG}
+    return {"summary": response_text}
+
 
 async def main():
-    instructions = """
-    Take these actions immediately:
-    1. Reassign Jira ticket #42 from Alice Smith to Bob Johnson with comment 'Reassigned due to Alice being sick'
-    2. Update Jira ticket #42 status to 'In Progress'
-    3. Send Slack message to channel 'engineering-critical' saying: 'CRITICAL: Bug #42 reassigned to Bob Johnson. Alice is out sick. EOD deadline.'
-    4. Create a 15-minute calendar event called 'Bug #42 Emergency Huddle' for Bob Johnson and Project Manager
-    """
-
-    result = await run_tool_operator(instructions)
-    print("\n" + "=" * 50)
-    print("TOOL OPERATOR SUMMARY:")
-    print("=" * 50)
+    result = await run_tool_operator(
+        "Reassign task 1 to Bob Johnson, update task 1 status to In Progress, record a notification to engineering-critical, and record an emergency huddle for Bob Johnson and Project Manager."
+    )
     print(result["summary"])
-    print("\nACTION LOG:")
-    for action in result["action_log"]:
-        print(f"  - {action['tool']}: {action['status']}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
