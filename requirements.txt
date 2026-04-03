@@ -1,0 +1,7 @@
+google-adk
+google-cloud-aiplatform
+fastapi
+uvicorn
+streamlit
+python-dotenv
+requests
