@@ -30,6 +30,13 @@ def execute_query(query, params=()):
     conn.commit()
     conn.close()
 
+def fetch_agent_runs():
+    return fetch_data("""
+        SELECT agent_name, stage, message, created_at
+        FROM agent_runs
+        ORDER BY id ASC
+    """)
+
 
 def parse_summary(summary: str):
     sections = {
@@ -311,11 +318,13 @@ if page == "Home":
                 <div class="hero-title">Analyze a situation in seconds</div>
                 <div class="hero-copy">
                     Describe a project problem in plain English and let the system assess risk,
-                    check context, and recommend the next best actions.
+                    check context, and recommend the next best actions. You can also run the
+                    autonomous daily health check without typing anything.
                 </div>
                 <div class="pill">Easy for non-technical users</div>
                 <div class="pill">Real local data flow</div>
                 <div class="pill">Multi-agent orchestration</div>
+                <div class="pill">Autonomous daily check</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -348,7 +357,13 @@ if page == "Home":
             placeholder="Example: A critical task is blocked and two team members are unavailable. What should we do today?"
         )
 
-        run_analysis = st.button("Analyze Situation", type="primary", use_container_width=True)
+        analyze_col, auto_col, mcp_col = st.columns(3)
+        with analyze_col:
+            run_analysis = st.button("Analyze Situation", type="primary", use_container_width=True)
+        with auto_col:
+            run_daily = st.button("Run Daily Auto Check", use_container_width=True)
+        with mcp_col:
+            run_mcp = st.button("Run MCP Ops Check", use_container_width=True)
 
     with right:
         st.markdown(
@@ -370,7 +385,8 @@ if page == "Home":
                 <div class="info-title">Current MVP Scope</div>
                 <div class="info-copy">
                     This version works with real local data, real internal action logging,
-                    and ADK-based multi-agent orchestration. External integrations can be added later.
+                    ADK-based multi-agent orchestration, a real Google Calendar action,
+                    and an autonomous daily health check mode.
                 </div>
             </div>
             """,
@@ -383,7 +399,7 @@ if page == "Home":
         else:
             with st.spinner("Analyzing with the multi-agent system..."):
                 try:
-                    response = requests.post(API_URL, json={"goal": goal}, timeout=180)
+                    response = requests.post(API_URL, json={"goal": goal}, timeout=300)
 
                     if response.status_code == 200:
                         data = response.json()
@@ -398,7 +414,17 @@ if page == "Home":
 
                         normalized_status = parsed["status"].upper()
                         if normalized_status:
-                            st.markdown(f"**Executive Status:** `{normalized_status}`")
+                            st.markdown(f"*Executive Status:* {normalized_status}")
+
+                        badge1, badge2, badge3, badge4 = st.columns(4)
+                        with badge1:
+                            st.success("Multi-Agent")
+                        with badge2:
+                            st.success("DB-Backed")
+                        with badge3:
+                            st.success("Real Calendar")
+                        with badge4:
+                            st.info("Interactive")
 
                         a1, a2, a3 = st.columns(3)
                         with a1:
@@ -431,12 +457,125 @@ if page == "Home":
                         st.text(response.text)
 
                 except requests.exceptions.ConnectionError:
-                    st.error("Cannot connect to backend. Make sure `python main.py` is running.")
+                    st.error("Cannot connect to backend. Make sure python main.py is running.")
                 except requests.exceptions.Timeout:
                     st.error("Request timed out.")
                 except Exception as exc:
                     st.error(f"Unexpected error: {exc}")
 
+    if run_daily:
+        with st.spinner("Running autonomous daily health check..."):
+            try:
+                response = requests.post("http://localhost:8080/analyze-daily", timeout=300)
+
+                if response.status_code == 200:
+                    data = response.json()
+                    summary = data["summary"]
+                    status = data["status"]
+                    parsed = parse_summary(summary)
+
+                    if status == "fallback":
+                        st.warning("Fallback mode is active because live model quota is exhausted.")
+                    else:
+                        st.success("Autonomous daily health check completed successfully.")
+
+                    normalized_status = parsed["status"].upper()
+                    if normalized_status:
+                        st.markdown(f"*Executive Status:* {normalized_status}")
+
+                    badge1, badge2, badge3, badge4 = st.columns(4)
+                    with badge1:
+                        st.success("Multi-Agent")
+                    with badge2:
+                        st.success("DB-Backed")
+                    with badge3:
+                        st.success("Real Calendar")
+                    with badge4:
+                        st.success("Autonomous")
+
+                    a1, a2, a3 = st.columns(3)
+                    with a1:
+                        st.markdown("### Red Flags")
+                        if parsed["red_flags"]:
+                            for item in parsed["red_flags"]:
+                                st.error(item)
+                        else:
+                            st.info("No red flags listed.")
+                    with a2:
+                        st.markdown("### Actions Taken")
+                        if parsed["actions"]:
+                            for item in parsed["actions"]:
+                                st.success(item)
+                        else:
+                            st.info("No actions listed.")
+                    with a3:
+                        st.markdown("### Recommendations")
+                        if parsed["recommendations"]:
+                            for item in parsed["recommendations"]:
+                                st.info(item)
+                        else:
+                            st.info("No recommendations listed.")
+
+                    with st.expander("View Full Executive Summary"):
+                        st.text_area("Daily Summary", value=summary, height=220)
+
+                else:
+                    st.error(f"API Error: {response.status_code}")
+                    st.text(response.text)
+
+            except requests.exceptions.ConnectionError:
+                st.error("Cannot connect to backend. Make sure python main.py is running.")
+            except requests.exceptions.Timeout:
+                st.error("Request timed out.")
+            except Exception as exc:
+                st.error(f"Unexpected error: {exc}")
+
+    if run_mcp:
+        mcp_goal = goal.strip() or "Check urgent open tasks and team availability. If delivery risk is present, create an emergency huddle for amaank2405@gmail.com."
+
+        with st.spinner("Running MCP-powered operations check..."):
+            try:
+                response = requests.post(
+                    "http://localhost:8080/analyze-mcp",
+                    json={"goal": mcp_goal},
+                    timeout=300
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    summary = data["summary"]
+                    status = data["status"]
+
+                    if status == "fallback":
+                        st.warning("Fallback mode is active because live model quota is exhausted.")
+                    else:
+                        st.success("MCP operations check completed successfully.")
+
+                    st.markdown("*Execution Mode:* MCP")
+
+                    badge1, badge2, badge3, badge4 = st.columns(4)
+                    with badge1:
+                        st.success("Multi-Agent")
+                    with badge2:
+                        st.success("DB-Backed")
+                    with badge3:
+                        st.success("Real Calendar")
+                    with badge4:
+                        st.success("MCP")
+
+                    st.markdown("### MCP Result")
+                    st.text_area("MCP Summary", value=summary, height=260)
+
+                else:
+                    st.error(f"API Error: {response.status_code}")
+                    st.text(response.text)
+
+            except requests.exceptions.ConnectionError:
+                st.error("Cannot connect to backend. Make sure python main.py is running.")
+            except requests.exceptions.Timeout:
+                st.error("Request timed out.")
+            except Exception as exc:
+                st.error(f"Unexpected error: {exc}")
 elif page == "Tasks":
     st.subheader("Current Tasks")
     tasks = fetch_data("""
@@ -476,14 +615,36 @@ elif page == "Team":
 
 elif page == "Action Log":
     st.subheader("Recent Action Log")
+
     actions = fetch_data("""
         SELECT id, tool, action, details, timestamp
         FROM action_log
         ORDER BY id DESC
         LIMIT 20
     """)
+
     if actions:
         st.dataframe(actions, use_container_width=True)
+
+        st.markdown("### Real External Actions")
+        calendar_rows = fetch_data("""
+            SELECT id, details, timestamp
+            FROM action_log
+            WHERE tool = 'GoogleCalendar'
+            ORDER BY id DESC
+            LIMIT 10
+        """)
+
+        if calendar_rows:
+            for row in calendar_rows:
+                details = row["details"]
+                if "event_link=" in details:
+                    event_link = details.split("event_link=")[-1].strip()
+                    st.markdown(f"[Open Google Calendar Event]({event_link})")
+                else:
+                    st.info(details)
+        else:
+            st.info("No real external action links found yet.")
     else:
         st.info("No actions logged yet.")
 

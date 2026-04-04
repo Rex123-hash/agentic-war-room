@@ -12,6 +12,8 @@ from google.genai import types
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
+from database.agent_logger import log_agent_event
+
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "database", "warroom.db")
 GEMINI_MODEL = "gemini-2.5-flash"
 
@@ -72,6 +74,7 @@ Return concise structured findings for the Commander.
 
 async def run_data_miner(query: str) -> str:
     print(f"[DATA MINER] Query: {query}")
+    log_agent_event("DataMinerAgent", "started", query)
 
     agent = LlmAgent(
         name="DataMinerAgent",
@@ -101,6 +104,7 @@ async def run_data_miner(query: str) -> str:
         if event.is_final_response() and event.content and event.content.parts:
             response_text = event.content.parts[0].text
             print("[DATA MINER] Done")
+            log_agent_event("DataMinerAgent", "completed", response_text[:500])
 
     return response_text
 

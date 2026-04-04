@@ -12,6 +12,8 @@ from google.genai import types
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
+from database.agent_logger import log_agent_event
+
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "database", "warroom.db")
 GEMINI_MODEL = "gemini-2.5-flash"
 
@@ -77,6 +79,7 @@ Always mention source title and date in your answer.
 
 async def run_context_agent(query: str) -> str:
     print(f"[CONTEXT AGENT] Query: {query}")
+    log_agent_event("ContextAgent", "started", query)
 
     agent = LlmAgent(
         name="ContextAgent",
@@ -105,6 +108,7 @@ async def run_context_agent(query: str) -> str:
         if event.is_final_response() and event.content and event.content.parts:
             response_text = event.content.parts[0].text
             print("[CONTEXT AGENT] Done")
+            log_agent_event("ContextAgent", "completed", response_text[:500])
 
     return response_text
 
