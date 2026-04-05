@@ -1,7 +1,9 @@
+import asyncio
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from agents.commander import run_commander
 from agents.mcp_ops_agent import run_mcp_ops_agent
+from database.chat_memory import save_message, get_recent_messages
 
 app = FastAPI(
     title="Agentic Project War-Room",
@@ -12,6 +14,7 @@ app = FastAPI(
 
 class GoalRequest(BaseModel):
     goal: str
+    session_id: str = "default-session"
 
 
 class SummaryResponse(BaseModel):
@@ -28,16 +31,15 @@ def fallback_summary(goal: str) -> str:
 Status: RED
 Red Flags:
 - Production instability is affecting users.
-- The on-call lead is currently unavailable, creating escalation risk.
-- Immediate coordination is needed to avoid extended impact.
+- The on-call lead is currently unavailable.
+- Immediate coordination is required.
 Actions Taken:
-- Accepted the production-risk scenario for emergency handling.
-- Switched to fallback response mode so the system remains available during model quota exhaustion.
-- Preserved access to local database state and internal action logging.
+- Accepted the production-risk scenario.
+- Switched to fallback mode to keep the system responsive.
 Recommendations:
 - Create an emergency engineering huddle immediately.
-- Assign one developer to incident triage and one to stakeholder communication.
-- Review blocked tasks and any pending deployment dependencies before making changes.
+- Assign one owner for triage and one for stakeholder communication.
+- Review blocked work and deployment dependencies.
 """
 
     if "critical" in goal_lower or "bug" in goal_lower or "sick" in goal_lower:
@@ -46,65 +48,107 @@ Recommendations:
 Status: YELLOW
 Red Flags:
 - A critical delivery issue is active.
-- Team availability is reduced due to developer absence.
-- Delay risk is elevated if ownership is not clarified quickly.
+- Team availability is reduced.
+- Delay risk is elevated if ownership is unclear.
 Actions Taken:
-- Accepted the critical-risk scenario for structured handling.
-- Switched to fallback response mode so the system remains available during model quota exhaustion.
-- Preserved access to local database state, internal action logging, and external action capability.
+- Accepted the critical-risk scenario.
+- Switched to fallback mode to avoid UI delay.
 Recommendations:
-- Reconfirm the task owner for the critical item immediately.
-- Schedule an emergency huddle and review current blockers.
+- Reconfirm the task owner immediately.
+- Schedule an emergency huddle.
 - Reassign the task to the most relevant available developer if needed.
-"""
-
-    if "sprint" in goal_lower or "deadline" in goal_lower:
-        return """EXECUTIVE SUMMARY
-=================
-Status: YELLOW
-Red Flags:
-- Delivery deadlines are at risk.
-- Open and blocked tasks may affect sprint completion.
-- Team coordination is required to reduce schedule slippage.
-Actions Taken:
-- Accepted the schedule-risk scenario for structured handling.
-- Switched to fallback response mode so the system remains available during model quota exhaustion.
-- Preserved access to local database state and action logging.
-Recommendations:
-- Prioritize blocked and high-priority work first.
-- Rebalance assignments across available team members.
-- Run a focused risk review before the next milestone.
 """
 
     return f"""EXECUTIVE SUMMARY
 =================
 Status: YELLOW
 Red Flags:
-- Live Gemini quota is currently exhausted, so the full AI reasoning path could not complete.
-- The requested scenario still needs manual review once quota is restored.
+- The full AI reasoning path could not complete in time.
 Actions Taken:
 - Accepted the user goal: {goal}
-- Switched to fallback response mode so the system remains available for testing.
-- Preserved local database access and internal action logging.
+- Switched to fallback mode to keep the system responsive.
 Recommendations:
-- Restore Vertex AI / Gemini quota and rerun this scenario.
-- Continue local and backend testing using fallback mode.
-- Keep SQLite-backed data and internal action logging enabled.
+- Retry the request when model quota or latency improves.
 """
 
 
-async def safe_run(goal: str) -> SummaryResponse:
+def build_chat_context(session_id: str, latest_goal: str) -> str:
+    history = get_recent_messages(session_id, limit=8)
+
+    if not history:
+        return latest_goal
+
+    lines = ["Conversation context:"]
+    for msg in history:
+        lines.append(f"{msg['role'].upper()}: {msg['message']}")
+
+    lines.append(f"USER: {latest_goal}")
+    lines.append("Use the above conversation context while responding.")
+    return "\n".join(lines)
+
+def is_small_talk(goal: str) -> bool:
+    cleaned = goal.strip().lower()
+    return cleaned in {
+        "hi", "hello", "hey", "hii", "hiii",
+        "good morning", "good evening", "good afternoon",
+        "how are you", "who are you"
+    }
+
+
+async def safe_run(goal: str, session_id: str) -> SummaryResponse:
+    if is_small_talk(goal):
+        return SummaryResponse(
+        status="success",
+        summary=(
+            "Hi! I’m Project War-Room, your project operations assistant. "
+            "Tell me about a project issue like a blocked task, critical bug, "
+            "team availability problem, sprint delay, or production incident, "
+            "and I’ll help analyze it."
+        ),
+    )
     try:
-        result = await run_commander(goal)
+        contextual_goal = build_chat_context(session_id, goal)
+        result = await asyncio.wait_for(run_commander(contextual_goal), timeout=45)
+        save_message(session_id, "user", goal)
+        save_message(session_id, "assistant", result)
         return SummaryResponse(status="success", summary=result)
+    except asyncio.TimeoutError:
+        fallback = fallback_summary(goal)
+        save_message(session_id, "user", goal)
+        save_message(session_id, "assistant", fallback)
+        return SummaryResponse(status="fallback", summary=fallback)
     except Exception as exc:
         error_text = str(exc)
 
         if "RESOURCE_EXHAUSTED" in error_text or "429" in error_text or "quota" in error_text.lower():
-            return SummaryResponse(
-                status="fallback",
-                summary=fallback_summary(goal),
-            )
+            fallback = fallback_summary(goal)
+            save_message(session_id, "user", goal)
+            save_message(session_id, "assistant", fallback)
+            return SummaryResponse(status="fallback", summary=fallback)
+
+        raise HTTPException(status_code=500, detail=error_text)
+
+
+async def safe_run_mcp(goal: str, session_id: str) -> SummaryResponse:
+    try:
+        contextual_goal = build_chat_context(session_id, goal)
+        result = await asyncio.wait_for(run_mcp_ops_agent(contextual_goal), timeout=45)
+        save_message(session_id, "user", goal)
+        save_message(session_id, "assistant", result)
+        return SummaryResponse(status="success", summary=result)
+    except asyncio.TimeoutError:
+        fallback = fallback_summary(goal)
+        save_message(session_id, "user", goal)
+        save_message(session_id, "assistant", fallback)
+        return SummaryResponse(status="fallback", summary=fallback)
+    except Exception as exc:
+        error_text = str(exc)
+
+        if "RESOURCE_EXHAUSTED" in error_text or "429" in error_text or "quota" in error_text.lower():
+            fallback = fallback_summary(goal)
+            save_message(session_id, "user", goal)
+            save_message(session_id, "assistant", fallback)
+            return SummaryResponse(status="fallback", summary=fallback)
 
         raise HTTPException(status_code=500, detail=error_text)
 
@@ -134,7 +178,7 @@ def health():
 async def analyze(request: GoalRequest):
     if not request.goal.strip():
         raise HTTPException(status_code=400, detail="Goal cannot be empty")
-    return await safe_run(request.goal)
+    return await safe_run(request.goal, request.session_id)
 
 
 @app.post("/analyze-daily", response_model=SummaryResponse)
@@ -145,27 +189,14 @@ async def analyze_daily():
         "relevant SOPs, and take necessary internal actions if there is project risk. "
         "Return a full executive summary."
     )
-    return await safe_run(daily_goal)
+    return await safe_run(daily_goal, "daily-session")
 
 
 @app.post("/analyze-mcp", response_model=SummaryResponse)
 async def analyze_mcp(request: GoalRequest):
     if not request.goal.strip():
         raise HTTPException(status_code=400, detail="Goal cannot be empty")
-
-    try:
-        result = await run_mcp_ops_agent(request.goal)
-        return SummaryResponse(status="success", summary=result)
-    except Exception as exc:
-        error_text = str(exc)
-
-        if "RESOURCE_EXHAUSTED" in error_text or "429" in error_text or "quota" in error_text.lower():
-            return SummaryResponse(
-                status="fallback",
-                summary=fallback_summary(request.goal),
-            )
-
-        raise HTTPException(status_code=500, detail=error_text)
+    return await safe_run_mcp(request.goal, request.session_id)
 
 
 if __name__ == "__main__":

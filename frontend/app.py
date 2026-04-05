@@ -1,8 +1,11 @@
 import sqlite3
+import uuid
 import requests
 import streamlit as st
 
 API_URL = "http://localhost:8080/analyze"
+DAILY_URL = "http://localhost:8080/analyze-daily"
+MCP_URL = "http://localhost:8080/analyze-mcp"
 DB_PATH = "database/warroom.db"
 
 
@@ -29,6 +32,7 @@ def execute_query(query, params=()):
     cur.execute(query, params)
     conn.commit()
     conn.close()
+
 
 def fetch_agent_runs():
     return fetch_data("""
@@ -68,182 +72,202 @@ def parse_summary(summary: str):
 
 def apply_theme(theme_name: str):
     if theme_name == "Dark":
-        bg = "#081120"
-        card = "#0f172a"
-        soft = "#111c34"
-        text = "#f8fafc"
-        subtext = "#cbd5e1"
-        border = "#24324a"
-        accent = "#f97316"
-        muted = "#94a3b8"
-        button_text = "#f8fafc"
-        secondary_button_bg = "#182235"
+        bg = "#0A0E1A"
+        card = "#111827"
+        soft = "#0F172A"
+        text = "#F9FAFB"
+        subtext = "#9CA3AF"
+        border = "#1F2937"
+        accent = "#F97316"
+        muted = "#4B5563"
+        input_bg = "#1F2937"
     else:
-        bg = "#f6f8fc"
-        card = "#ffffff"
-        soft = "#eef2ff"
-        text = "#0f172a"
+        bg = "#F5F7FB"
+        card = "#FFFFFF"
+        soft = "#EEF2FF"
+        text = "#0F172A"
         subtext = "#475569"
-        border = "#dbe3ef"
-        accent = "#dc2626"
-        muted = "#64748b"
-        button_text = "#0f172a"
-        secondary_button_bg = "#ffffff"
+        border = "#D6DCE8"
+        accent = "#F97316"
+        muted = "#64748B"
+        input_bg = "#FFFFFF"
 
     st.markdown(
         f"""
         <style>
+        #MainMenu {{visibility:hidden;}}
+        footer {{visibility:hidden;}}
+        header {{visibility:hidden;}}
+
         .stApp {{
             background:
-                radial-gradient(circle at top right, {soft} 0%, {bg} 35%),
+                radial-gradient(circle at top right, {soft} 0%, transparent 28%),
                 linear-gradient(180deg, {bg} 0%, {bg} 100%);
             color: {text};
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }}
 
         .block-container {{
-            padding-top: 1rem !important;
+            padding-top: 1.4rem;
             padding-bottom: 2rem;
-            max-width: 1280px;
+            max-width: 1200px;
         }}
 
-        header[data-testid="stHeader"] {{
-            background: transparent;
-        }}
-
-        h1, h2, h3, h4, h5, h6, p, label, div, span {{
+        h1, h2, h3, h4, h5, h6, p, div, span, label, li {{
             color: {text};
         }}
 
-        .topbar {{
+        .topbar-card, .hero-card, .panel-card, .info-card, .about-card, .result-card {{
             background: {card};
             border: 1px solid {border};
-            border-radius: 18px;
-            padding: 0.9rem 1.1rem;
-            margin-bottom: 1rem;
+            border-radius: 12px;
+            padding: 20px 24px;
         }}
 
-        .brand {{
-            font-size: 1.8rem;
+        .topbar-card {{
+            margin-bottom: 20px;
+        }}
+
+        .brand-line {{
+            font-size: 30px;
             font-weight: 800;
-            color: {text};
             margin: 0;
+            line-height: 1.1;
         }}
 
-        .brand-accent {{
-            color: {accent};
-        }}
+        .brand-light {{ color: {text}; }}
+        .brand-accent {{ color: {accent}; }}
 
         .tagline {{
             color: {subtext};
-            font-size: 0.95rem;
-            margin-top: 0.25rem;
+            font-size: 13px;
+            margin-top: 6px;
         }}
 
-        .hero-card {{
-            background: linear-gradient(135deg, {card} 0%, {soft} 100%);
-            border: 1px solid {border};
-            border-radius: 22px;
-            padding: 1.2rem 1.2rem 1rem 1.2rem;
-            margin-bottom: 1rem;
+        .section-title {{
+            font-size: 20px;
+            font-weight: 600;
+            color: {text};
+            margin-bottom: 10px;
         }}
 
         .hero-title {{
-            font-size: 2.2rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 0.4rem;
-        }}
-
-        .hero-copy {{
-            color: {subtext};
-            font-size: 1rem;
-            line-height: 1.6;
-            max-width: 850px;
-        }}
-
-        .pill {{
-            display: inline-block;
-            margin-right: 0.45rem;
-            margin-top: 0.6rem;
-            padding: 0.38rem 0.7rem;
-            border-radius: 999px;
-            border: 1px solid {border};
-            background: {card};
-            color: {subtext};
-            font-size: 0.82rem;
-            font-weight: 600;
-        }}
-
-        .info-card {{
-            background: {card};
-            border: 1px solid {border};
-            border-radius: 18px;
-            padding: 1rem;
-        }}
-
-        .info-title {{
-            font-size: 1.05rem;
+            font-size: 24px;
             font-weight: 700;
-            margin-bottom: 0.45rem;
+            margin-bottom: 6px;
         }}
 
-        .info-copy {{
+        .hero-copy, .subtle-copy {{
             color: {subtext};
-            line-height: 1.55;
-            font-size: 0.93rem;
+            font-size: 14px;
+            line-height: 1.6;
         }}
 
-        div[data-testid="stMetric"] {{
+        .mini-title {{
+            font-size: 14px;
+            font-weight: 600;
+            color: {text};
+            margin-bottom: 8px;
+        }}
+
+        .badge-pill {{
+            display: inline-block;
+            background: {soft};
+            color: {subtext};
+            border: 1px solid {border};
+            border-radius: 999px;
+            padding: 5px 12px;
+            font-size: 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }}
+
+        .metric-card {{
             background: {card};
             border: 1px solid {border};
-            border-radius: 16px;
-            padding: 0.8rem;
+            border-radius: 12px;
+            padding: 18px 20px;
+            min-height: 94px;
         }}
 
-        div[data-testid="stDataFrame"] {{
+        .metric-label {{
+            margin: 0;
+            font-size: 11px;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            color: {subtext};
+        }}
+
+        .metric-value {{
+            margin: 6px 0 0;
+            font-size: 30px;
+            font-weight: 700;
+            color: {text};
+        }}
+
+        .mode-pill {{
+            display: inline-block;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 12px;
             border: 1px solid {border};
-            border-radius: 14px;
-            overflow: hidden;
         }}
 
-        textarea, input {{
-            border-radius: 12px !important;
-        }}
-
-        div[data-baseweb="select"] > div {{
-            border-radius: 12px !important;
-        }}
-
-        .stTabs [data-baseweb="tab-list"] {{
-            gap: 8px;
-            overflow-x: auto;
-        }}
-
-        .stTabs [data-baseweb="tab"] {{
-            border-radius: 12px 12px 0 0;
-            padding-left: 16px;
-            padding-right: 16px;
-        }}
+        .mode-interactive {{ background: rgba(249,115,22,0.12); color: #F97316; }}
+        .mode-auto {{ background: rgba(16,185,129,0.12); color: #10B981; }}
+        .mode-mcp {{ background: rgba(99,102,241,0.12); color: #6366F1; }}
 
         .footer-note {{
             text-align: center;
             color: {muted};
-            font-size: 0.84rem;
-            padding-top: 0.5rem;
+            font-size: 13px;
+            padding-top: 16px;
         }}
 
-        div.stButton > button {{
-            border-radius: 12px !important;
-        }}
-
-        div.stButton > button[kind="secondary"] {{
-            background: {secondary_button_bg} !important;
-            color: {button_text} !important;
+        .stButton > button {{
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            height: 42px !important;
             border: 1px solid {border} !important;
         }}
 
-        div.stButton > button p {{
-            color: inherit !important;
+        .stTextArea textarea, .stTextInput input {{
+            background: {input_bg} !important;
+            color: {text} !important;
+            border: 1px solid {border} !important;
+            border-radius: 8px !important;
+        }}
+
+        .stSelectbox [data-baseweb="select"] > div,
+        .stMultiSelect [data-baseweb="select"] > div {{
+            background: {input_bg} !important;
+            color: {text} !important;
+            border: 1px solid {border} !important;
+            border-radius: 8px !important;
+        }}
+
+        div[data-testid="stDataFrame"] {{
+            border: 1px solid {border};
+            border-radius: 12px;
+            overflow: hidden;
+        }}
+
+        div[data-testid="stRadio"] > div {{
+            background: {card};
+            border: 1px solid {border};
+            border-radius: 10px;
+            padding: 6px;
+        }}
+
+        div[data-testid="stRadio"] label {{
+            padding: 6px 14px;
+            border-radius: 8px;
+        }}
+
+        div[role="radiogroup"] label > div:first-child {{
+            display: none;
         }}
         </style>
         """,
@@ -251,41 +275,120 @@ def apply_theme(theme_name: str):
     )
 
 
-st.set_page_config(
-    page_title="Project War-Room",
-    page_icon="🚨",
-    layout="wide"
-)
+def metric_card(label, value, border_color):
+    return f"""
+    <div class="metric-card" style="border-left:3px solid {border_color};">
+        <p class="metric-label">{label}</p>
+        <p class="metric-value">{value}</p>
+    </div>
+    """
+
+
+def capability_badges(mode_label):
+    b1, b2, b3, b4 = st.columns(4)
+    with b1:
+        st.success("Multi-Agent")
+    with b2:
+        st.success("DB-Backed")
+    with b3:
+        st.success("Real Calendar")
+    with b4:
+        if mode_label == "MCP":
+            st.success("MCP")
+        elif mode_label == "AUTONOMOUS":
+            st.success("Autonomous")
+        else:
+            st.info("Interactive")
+
+
+def show_structured_result(summary: str, mode_label: str):
+    parsed = parse_summary(summary)
+
+    if mode_label == "MCP":
+        st.markdown('<div class="mode-pill mode-mcp">MCP</div>', unsafe_allow_html=True)
+    elif mode_label == "AUTONOMOUS":
+        st.markdown('<div class="mode-pill mode-auto">AUTONOMOUS</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="mode-pill mode-interactive">INTERACTIVE</div>', unsafe_allow_html=True)
+
+    normalized_status = parsed["status"].upper()
+    if normalized_status:
+        st.markdown(f"**Executive Status:** `{normalized_status}`")
+
+    capability_badges(mode_label)
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.markdown("### Red Flags")
+        if parsed["red_flags"]:
+            for item in parsed["red_flags"]:
+                st.error(item)
+        else:
+            st.info("No red flags listed.")
+
+    with c2:
+        st.markdown("### Actions Taken")
+        if parsed["actions"]:
+            for item in parsed["actions"]:
+                st.success(item)
+        else:
+            st.info("No actions listed.")
+
+    with c3:
+        st.markdown("### Recommendations")
+        if parsed["recommendations"]:
+            for item in parsed["recommendations"]:
+                st.info(item)
+        else:
+            st.info("No recommendations listed.")
+
+    with st.expander("View Full Executive Summary"):
+        st.text_area("Summary", value=summary, height=220)
+
+    agent_runs = fetch_agent_runs()
+    st.markdown("### Agent Activity Timeline")
+    if agent_runs:
+        for row in agent_runs:
+            st.markdown(f"- **{row['agent_name']}** | `{row['stage']}` | {row['message']}")
+    else:
+        st.info("No agent activity recorded yet.")
+
+
+st.set_page_config(page_title="Project War-Room", page_icon="🚨", layout="wide")
 
 if "theme" not in st.session_state:
     st.session_state.theme = "Dark"
 
-if "goal" not in st.session_state:
-    st.session_state.goal = ""
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+if "draft_prompt" not in st.session_state:
+    st.session_state.draft_prompt = ""
 
 apply_theme(st.session_state.theme)
 
-top1, top2, top3 = st.columns([6, 0.7, 0.9])
-
+top1, top2, top3 = st.columns([6, 0.8, 1.1])
 with top1:
     st.markdown(
         """
-        <div class="topbar">
-            <div class="brand">Project <span class="brand-accent">War-Room</span></div>
+        <div class="topbar-card">
+            <div class="brand-line"><span class="brand-light">Project </span><span class="brand-accent">War-Room</span></div>
             <div class="tagline">Multi-agent workspace for project monitoring, risk analysis, and operational response.</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
 with top2:
-    theme_icon = "🌙" if st.session_state.theme == "Dark" else "☀️"
-    if st.button(theme_icon, use_container_width=True):
+    icon = "🌙" if st.session_state.theme == "Dark" else "☀️"
+    if st.button(icon, use_container_width=True):
         st.session_state.theme = "Light" if st.session_state.theme == "Dark" else "Dark"
         st.rerun()
-
 with top3:
-    if st.button("Refresh", use_container_width=True):
+    if st.button("⟳ Refresh", use_container_width=True):
         st.rerun()
 
 task_count = fetch_one("SELECT COUNT(*) FROM tasks")[0]
@@ -295,17 +398,22 @@ available_count = fetch_one("SELECT COUNT(*) FROM team_members WHERE available =
 action_count = fetch_one("SELECT COUNT(*) FROM action_log")[0]
 
 m1, m2, m3, m4, m5 = st.columns(5)
-m1.metric("Total Tasks", task_count)
-m2.metric("Open Tasks", open_count)
-m3.metric("Critical Open", critical_count)
-m4.metric("Available Team", available_count)
-m5.metric("Logged Actions", action_count)
+with m1:
+    st.markdown(metric_card("Total Tasks", task_count, "#6366F1"), unsafe_allow_html=True)
+with m2:
+    st.markdown(metric_card("Open Tasks", open_count, "#F97316"), unsafe_allow_html=True)
+with m3:
+    st.markdown(metric_card("Critical Open", critical_count, "#EF4444"), unsafe_allow_html=True)
+with m4:
+    st.markdown(metric_card("Available Team", available_count, "#10B981"), unsafe_allow_html=True)
+with m5:
+    st.markdown(metric_card("Logged Actions", action_count, "#F59E0B"), unsafe_allow_html=True)
 
 page = st.radio(
     "Navigation",
     ["Home", "Tasks", "Team", "Action Log", "Manage Data", "About"],
     horizontal=True,
-    label_visibility="collapsed"
+    label_visibility="collapsed",
 )
 
 if page == "Home":
@@ -315,16 +423,15 @@ if page == "Home":
         st.markdown(
             """
             <div class="hero-card">
-                <div class="hero-title">Analyze a situation in seconds</div>
+                <div class="hero-title">Ask about your real project situation</div>
                 <div class="hero-copy">
-                    Describe a project problem in plain English and let the system assess risk,
-                    check context, and recommend the next best actions. You can also run the
-                    autonomous daily health check without typing anything.
+                    Type your own project issue, delivery risk, blocked task, or team problem.
+                    The system will analyze it using multiple agents and suggest next actions.
                 </div>
-                <div class="pill">Easy for non-technical users</div>
-                <div class="pill">Real local data flow</div>
-                <div class="pill">Multi-agent orchestration</div>
-                <div class="pill">Autonomous daily check</div>
+                <span class="badge-pill">⚡ Real user input</span>
+                <span class="badge-pill">🗄 Real local data flow</span>
+                <span class="badge-pill">🤖 Multi-agent orchestration</span>
+                <span class="badge-pill">📅 Real calendar action</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -333,46 +440,56 @@ if page == "Home":
         quick1, quick2, quick3 = st.columns(3)
         with quick1:
             if st.button("Critical Bug", use_container_width=True):
-                st.session_state.goal = (
-                    "Our lead developer Alice is out sick today. Critical bug #42 is still open. "
-                    "The deadline is end of day. Analyze the situation and take necessary internal actions."
-                )
+                st.session_state.draft_prompt = "A critical issue is open, delivery is at risk today, and we need an action plan."
+                st.rerun()
         with quick2:
             if st.button("Production Issue", use_container_width=True):
-                st.session_state.goal = (
-                    "Production is unstable, users are reporting failures, and the on-call lead is busy. "
-                    "Analyze the situation and suggest immediate actions."
-                )
+                st.session_state.draft_prompt = "Production is unstable, users are impacted, and immediate coordination is required."
+                st.rerun()
         with quick3:
             if st.button("Sprint Delay", use_container_width=True):
-                st.session_state.goal = (
-                    "Sprint deadline is tomorrow, blocked tasks remain open, and code reviews are pending. "
-                    "Analyze project risk and recommend actions."
-                )
+                st.session_state.draft_prompt = "Sprint delivery is at risk because some tasks are blocked and deadlines are close."
+                st.rerun()
 
-        goal = st.text_area(
-            "Your prompt",
-            value=st.session_state.get("goal", ""),
-            height=95,
-            placeholder="Example: A critical task is blocked and two team members are unavailable. What should we do today?"
+        user_prompt = st.text_area(
+            "Your Message",
+            value=st.session_state.draft_prompt,
+            height=100,
+            placeholder="Example: We have 2 blocked tasks, one critical issue, and one unavailable team member. What should we do today?"
         )
 
-        analyze_col, auto_col, mcp_col = st.columns(3)
-        with analyze_col:
+        action1, action2, action3, action4 = st.columns(4)
+        with action1:
             run_analysis = st.button("Analyze Situation", type="primary", use_container_width=True)
-        with auto_col:
+        with action2:
             run_daily = st.button("Run Daily Auto Check", use_container_width=True)
-        with mcp_col:
+        with action3:
             run_mcp = st.button("Run MCP Ops Check", use_container_width=True)
+        with action4:
+            clear_chat = st.button("Clear", use_container_width=True)
+
+        if clear_chat:
+            st.session_state.chat_history = []
+            st.session_state.draft_prompt = ""
+            st.session_state.session_id = str(uuid.uuid4())
+            st.rerun()
+
+        st.markdown("### Conversation")
+        if st.session_state.chat_history:
+            for msg in st.session_state.chat_history[-8:]:
+                with st.chat_message(msg["role"]):
+                    st.write(msg["content"])
+        else:
+            st.info("No conversation yet. Type your own project situation and click Analyze Situation.")
 
     with right:
         st.markdown(
             """
             <div class="info-card">
-                <div class="info-title">Prompt Tips</div>
-                <div class="info-copy">
+                <div class="mini-title">💡 Prompt Tips</div>
+                <div class="subtle-copy">
                     Mention the issue, who is affected, the deadline, and any staffing problem.
-                    Short and specific prompts usually give the best result.
+                    You can describe your own real situation here.
                 </div>
             </div>
             """,
@@ -382,11 +499,10 @@ if page == "Home":
         st.markdown(
             """
             <div class="info-card">
-                <div class="info-title">Current MVP Scope</div>
-                <div class="info-copy">
-                    This version works with real local data, real internal action logging,
-                    ADK-based multi-agent orchestration, a real Google Calendar action,
-                    and an autonomous daily health check mode.
+                <div class="mini-title">🚀 Current MVP Scope</div>
+                <div class="subtle-copy">
+                    Real local data, real action logging, ADK-based multi-agent orchestration,
+                    MCP mode, and real Google Calendar emergency huddles.
                 </div>
             </div>
             """,
@@ -394,190 +510,118 @@ if page == "Home":
         )
 
     if run_analysis:
-        if not goal.strip():
-            st.warning("Please enter a situation first.")
+        if not user_prompt.strip():
+            st.warning("Please enter a real project situation first.")
         else:
-            with st.spinner("Analyzing with the multi-agent system..."):
+            st.session_state.chat_history.append({"role": "user", "content": user_prompt})
+            st.session_state.draft_prompt = user_prompt
+
+            with st.spinner("Coordinating agents..."):
                 try:
-                    response = requests.post(API_URL, json={"goal": goal}, timeout=300)
+                    response = requests.post(
+                        API_URL,
+                        json={
+                            "goal": user_prompt,
+                            "session_id": st.session_state.session_id,
+                        },
+                        timeout=45,
+                    )
 
                     if response.status_code == 200:
                         data = response.json()
                         summary = data["summary"]
-                        status = data["status"]
-                        parsed = parse_summary(summary)
+                        st.session_state.chat_history.append({"role": "assistant", "content": summary})
 
-                        if status == "fallback":
-                            st.warning("Fallback mode is active because live model quota is exhausted.")
+                        if data["status"] == "fallback":
+                            st.warning("Fallback mode is active because live model quota is exhausted or the request took too long.")
                         else:
                             st.success("Analysis completed successfully.")
 
-                        normalized_status = parsed["status"].upper()
-                        if normalized_status:
-                            st.markdown(f"*Executive Status:* {normalized_status}")
-
-                        badge1, badge2, badge3, badge4 = st.columns(4)
-                        with badge1:
-                            st.success("Multi-Agent")
-                        with badge2:
-                            st.success("DB-Backed")
-                        with badge3:
-                            st.success("Real Calendar")
-                        with badge4:
-                            st.info("Interactive")
-
-                        a1, a2, a3 = st.columns(3)
-                        with a1:
-                            st.markdown("### Red Flags")
-                            if parsed["red_flags"]:
-                                for item in parsed["red_flags"]:
-                                    st.error(item)
-                            else:
-                                st.info("No red flags listed.")
-                        with a2:
-                            st.markdown("### Actions Taken")
-                            if parsed["actions"]:
-                                for item in parsed["actions"]:
-                                    st.success(item)
-                            else:
-                                st.info("No actions listed.")
-                        with a3:
-                            st.markdown("### Recommendations")
-                            if parsed["recommendations"]:
-                                for item in parsed["recommendations"]:
-                                    st.info(item)
-                            else:
-                                st.info("No recommendations listed.")
-
-                        with st.expander("View Full Executive Summary"):
-                            st.text_area("Summary", value=summary, height=220)
-
+                        st.markdown('<div class="result-card">', unsafe_allow_html=True)
+                        show_structured_result(summary, "INTERACTIVE")
+                        st.markdown('</div>', unsafe_allow_html=True)
                     else:
                         st.error(f"API Error: {response.status_code}")
                         st.text(response.text)
 
-                except requests.exceptions.ConnectionError:
-                    st.error("Cannot connect to backend. Make sure python main.py is running.")
                 except requests.exceptions.Timeout:
-                    st.error("Request timed out.")
+                    st.error("The request took too long. Please try MCP mode or try again.")
+                except requests.exceptions.ConnectionError:
+                    st.error("Cannot connect to backend. Make sure `python main.py` is running.")
                 except Exception as exc:
                     st.error(f"Unexpected error: {exc}")
 
     if run_daily:
-        with st.spinner("Running autonomous daily health check..."):
+        with st.spinner("Running autonomous daily check..."):
             try:
-                response = requests.post("http://localhost:8080/analyze-daily", timeout=300)
+                response = requests.post(DAILY_URL, timeout=45)
 
                 if response.status_code == 200:
                     data = response.json()
                     summary = data["summary"]
-                    status = data["status"]
-                    parsed = parse_summary(summary)
+                    st.session_state.chat_history.append({"role": "assistant", "content": summary})
 
-                    if status == "fallback":
-                        st.warning("Fallback mode is active because live model quota is exhausted.")
+                    if data["status"] == "fallback":
+                        st.warning("Fallback mode is active because live model quota is exhausted or the request took too long.")
                     else:
                         st.success("Autonomous daily health check completed successfully.")
 
-                    normalized_status = parsed["status"].upper()
-                    if normalized_status:
-                        st.markdown(f"*Executive Status:* {normalized_status}")
-
-                    badge1, badge2, badge3, badge4 = st.columns(4)
-                    with badge1:
-                        st.success("Multi-Agent")
-                    with badge2:
-                        st.success("DB-Backed")
-                    with badge3:
-                        st.success("Real Calendar")
-                    with badge4:
-                        st.success("Autonomous")
-
-                    a1, a2, a3 = st.columns(3)
-                    with a1:
-                        st.markdown("### Red Flags")
-                        if parsed["red_flags"]:
-                            for item in parsed["red_flags"]:
-                                st.error(item)
-                        else:
-                            st.info("No red flags listed.")
-                    with a2:
-                        st.markdown("### Actions Taken")
-                        if parsed["actions"]:
-                            for item in parsed["actions"]:
-                                st.success(item)
-                        else:
-                            st.info("No actions listed.")
-                    with a3:
-                        st.markdown("### Recommendations")
-                        if parsed["recommendations"]:
-                            for item in parsed["recommendations"]:
-                                st.info(item)
-                        else:
-                            st.info("No recommendations listed.")
-
-                    with st.expander("View Full Executive Summary"):
-                        st.text_area("Daily Summary", value=summary, height=220)
-
+                    st.markdown('<div class="result-card">', unsafe_allow_html=True)
+                    show_structured_result(summary, "AUTONOMOUS")
+                    st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     st.error(f"API Error: {response.status_code}")
                     st.text(response.text)
 
-            except requests.exceptions.ConnectionError:
-                st.error("Cannot connect to backend. Make sure python main.py is running.")
             except requests.exceptions.Timeout:
-                st.error("Request timed out.")
+                st.error("Daily check took too long. Please try again.")
+            except requests.exceptions.ConnectionError:
+                st.error("Cannot connect to backend. Make sure `python main.py` is running.")
             except Exception as exc:
                 st.error(f"Unexpected error: {exc}")
 
     if run_mcp:
-        mcp_goal = goal.strip() or "Check urgent open tasks and team availability. If delivery risk is present, create an emergency huddle for amaank2405@gmail.com."
+        mcp_goal = user_prompt.strip() or "Check urgent open tasks and team availability. If delivery risk is present, create an emergency huddle."
 
-        with st.spinner("Running MCP-powered operations check..."):
+        with st.spinner("Running MCP operations..."):
             try:
                 response = requests.post(
-                    "http://localhost:8080/analyze-mcp",
-                    json={"goal": mcp_goal},
-                    timeout=300
+                    MCP_URL,
+                    json={
+                        "goal": mcp_goal,
+                        "session_id": st.session_state.session_id,
+                    },
+                    timeout=45,
                 )
 
                 if response.status_code == 200:
                     data = response.json()
                     summary = data["summary"]
-                    status = data["status"]
+                    st.session_state.chat_history.append({"role": "assistant", "content": summary})
 
-                    if status == "fallback":
-                        st.warning("Fallback mode is active because live model quota is exhausted.")
+                    if data["status"] == "fallback":
+                        st.warning("Fallback mode is active because live model quota is exhausted or the request took too long.")
                     else:
                         st.success("MCP operations check completed successfully.")
 
-                    st.markdown("*Execution Mode:* MCP")
-
-                    badge1, badge2, badge3, badge4 = st.columns(4)
-                    with badge1:
-                        st.success("Multi-Agent")
-                    with badge2:
-                        st.success("DB-Backed")
-                    with badge3:
-                        st.success("Real Calendar")
-                    with badge4:
-                        st.success("MCP")
-
+                    st.markdown('<div class="result-card">', unsafe_allow_html=True)
                     st.markdown("### MCP Result")
+                    capability_badges("MCP")
                     st.text_area("MCP Summary", value=summary, height=260)
-
+                    st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     st.error(f"API Error: {response.status_code}")
                     st.text(response.text)
 
-            except requests.exceptions.ConnectionError:
-                st.error("Cannot connect to backend. Make sure python main.py is running.")
             except requests.exceptions.Timeout:
-                st.error("Request timed out.")
+                st.error("MCP check took too long. Please try again.")
+            except requests.exceptions.ConnectionError:
+                st.error("Cannot connect to backend. Make sure `python main.py` is running.")
             except Exception as exc:
                 st.error(f"Unexpected error: {exc}")
+
 elif page == "Tasks":
-    st.subheader("Current Tasks")
+    st.markdown('<div class="section-title">Current Tasks</div>', unsafe_allow_html=True)
     tasks = fetch_data("""
         SELECT id, title, assignee, status, priority, deadline
         FROM tasks
@@ -590,43 +634,40 @@ elif page == "Tasks":
             END,
             id
     """)
+    st.markdown('<div class="panel-card">', unsafe_allow_html=True)
     if tasks:
         st.dataframe(tasks, use_container_width=True)
     else:
         st.info("No tasks found.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif page == "Team":
-    st.subheader("Team Status")
+    st.markdown('<div class="section-title">Team Status</div>', unsafe_allow_html=True)
     team = fetch_data("""
-        SELECT
-            id,
-            name,
-            role,
-            email,
-            skills,
-            CASE WHEN available = 1 THEN 'Available' ELSE 'Unavailable' END AS availability
+        SELECT id, name, role, email, skills,
+               CASE WHEN available = 1 THEN 'Available' ELSE 'Unavailable' END AS availability
         FROM team_members
         ORDER BY id
     """)
+    st.markdown('<div class="panel-card">', unsafe_allow_html=True)
     if team:
         st.dataframe(team, use_container_width=True)
     else:
         st.info("No team members found.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif page == "Action Log":
-    st.subheader("Recent Action Log")
-
+    st.markdown('<div class="section-title">Recent Action Log</div>', unsafe_allow_html=True)
     actions = fetch_data("""
         SELECT id, tool, action, details, timestamp
         FROM action_log
         ORDER BY id DESC
         LIMIT 20
     """)
-
+    st.markdown('<div class="panel-card">', unsafe_allow_html=True)
     if actions:
         st.dataframe(actions, use_container_width=True)
-
-        st.markdown("### Real External Actions")
+        st.markdown("### 🔗 Real External Actions")
         calendar_rows = fetch_data("""
             SELECT id, details, timestamp
             FROM action_log
@@ -634,7 +675,6 @@ elif page == "Action Log":
             ORDER BY id DESC
             LIMIT 10
         """)
-
         if calendar_rows:
             for row in calendar_rows:
                 details = row["details"]
@@ -647,13 +687,15 @@ elif page == "Action Log":
             st.info("No real external action links found yet.")
     else:
         st.info("No actions logged yet.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif page == "Manage Data":
-    st.subheader("Manage Project Data")
+    st.markdown('<div class="section-title">Manage Project Data</div>', unsafe_allow_html=True)
 
     left, right = st.columns(2)
 
     with left:
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Add Task")
         with st.form("add_task_form"):
             title = st.text_input("Task Title")
@@ -661,9 +703,8 @@ elif page == "Manage Data":
             status = st.selectbox("Status", ["Open", "In Progress", "Blocked", "Closed"])
             priority = st.selectbox("Priority", ["Low", "Medium", "High", "Critical"])
             deadline = st.text_input("Deadline", placeholder="2026-04-10")
-            description = st.text_area("Description", height=80)
-            submit_task = st.form_submit_button("Add Task")
-
+            description = st.text_area("Description", height=90)
+            submit_task = st.form_submit_button("Add Task", use_container_width=True)
             if submit_task:
                 if not title.strip():
                     st.warning("Task title is required.")
@@ -677,15 +718,14 @@ elif page == "Manage Data":
                     )
                     st.success("Task added successfully.")
                     st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("---")
-
+        st.markdown("")
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Update Task")
         task_options = fetch_data("SELECT id, title, assignee, status FROM tasks ORDER BY id")
         if task_options:
-            task_map = {
-                f"{task['id']} - {task['title']} ({task['status']})": task for task in task_options
-            }
+            task_map = {f"{task['id']} - {task['title']} ({task['status']})": task for task in task_options}
             with st.form("update_task_form"):
                 selected_task_label = st.selectbox("Select Task", list(task_map.keys()))
                 selected_task = task_map[selected_task_label]
@@ -696,8 +736,7 @@ elif page == "Manage Data":
                     index=["Open", "In Progress", "Blocked", "Closed"].index(selected_task["status"])
                     if selected_task["status"] in ["Open", "In Progress", "Blocked", "Closed"] else 0
                 )
-                submit_update_task = st.form_submit_button("Update Task")
-
+                submit_update_task = st.form_submit_button("Update Task", use_container_width=True)
                 if submit_update_task:
                     if not new_assignee.strip():
                         st.warning("Assignee cannot be empty while updating a task.")
@@ -708,18 +747,18 @@ elif page == "Manage Data":
                         )
                         st.success("Task updated successfully.")
                         st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("---")
-
+        st.markdown("")
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Delete Task")
         delete_task_options = fetch_data("SELECT id, title FROM tasks ORDER BY id")
         if delete_task_options:
             delete_task_map = {f"{task['id']} - {task['title']}": task["id"] for task in delete_task_options}
             with st.form("delete_task_form"):
                 selected_delete_task = st.selectbox("Select Task To Delete", list(delete_task_map.keys()))
-                confirm_delete_task = st.checkbox("I understand this task will be permanently deleted")
-                submit_delete_task = st.form_submit_button("Delete Task")
-
+                confirm_delete_task = st.checkbox("⚠️ I understand this will be permanently deleted")
+                submit_delete_task = st.form_submit_button("Delete Task", use_container_width=True)
                 if submit_delete_task:
                     if not confirm_delete_task:
                         st.warning("Please confirm task deletion.")
@@ -727,8 +766,10 @@ elif page == "Manage Data":
                         execute_query("DELETE FROM tasks WHERE id = ?", (delete_task_map[selected_delete_task],))
                         st.success("Task deleted successfully.")
                         st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with right:
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Add Team Member")
         with st.form("add_team_form"):
             name = st.text_input("Name")
@@ -736,8 +777,7 @@ elif page == "Manage Data":
             email = st.text_input("Email")
             skills = st.text_input("Skills", placeholder="python,react,debugging")
             available = st.selectbox("Available", ["Yes", "No"])
-            submit_member = st.form_submit_button("Add Team Member")
-
+            submit_member = st.form_submit_button("Add Team Member", use_container_width=True)
             if submit_member:
                 if not name.strip():
                     st.warning("Team member name is required.")
@@ -751,13 +791,14 @@ elif page == "Manage Data":
                     )
                     st.success("Team member added successfully.")
                     st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("---")
-
+        st.markdown("")
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Update Team Availability")
         member_options = fetch_data("SELECT id, name, available FROM team_members ORDER BY id")
         if member_options:
-            member_map = {f"{m['id']} - {m['name']}": m for m in member_options}
+            member_map = {f"{member['id']} - {member['name']}": member for member in member_options}
             with st.form("update_member_form"):
                 selected_member_label = st.selectbox("Select Team Member", list(member_map.keys()))
                 selected_member = member_map[selected_member_label]
@@ -766,8 +807,7 @@ elif page == "Manage Data":
                     ["Available", "Unavailable"],
                     index=0 if selected_member["available"] == 1 else 1
                 )
-                submit_update_member = st.form_submit_button("Update Availability")
-
+                submit_update_member = st.form_submit_button("Update Availability", use_container_width=True)
                 if submit_update_member:
                     execute_query(
                         "UPDATE team_members SET available = ? WHERE id = ?",
@@ -775,18 +815,18 @@ elif page == "Manage Data":
                     )
                     st.success("Team member availability updated successfully.")
                     st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown("---")
-
+        st.markdown("")
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Delete Team Member")
         delete_member_options = fetch_data("SELECT id, name FROM team_members ORDER BY id")
         if delete_member_options:
-            delete_member_map = {f"{m['id']} - {m['name']}": m["id"] for m in delete_member_options}
+            delete_member_map = {f"{member['id']} - {member['name']}": member["id"] for member in delete_member_options}
             with st.form("delete_member_form"):
                 selected_delete_member = st.selectbox("Select Team Member To Delete", list(delete_member_map.keys()))
-                confirm_delete_member = st.checkbox("I understand this team member will be permanently deleted")
-                submit_delete_member = st.form_submit_button("Delete Team Member")
-
+                confirm_delete_member = st.checkbox("⚠️ I understand this will be permanently deleted")
+                submit_delete_member = st.form_submit_button("Delete Team Member", use_container_width=True)
                 if submit_delete_member:
                     if not confirm_delete_member:
                         st.warning("Please confirm team member deletion.")
@@ -794,17 +834,18 @@ elif page == "Manage Data":
                         execute_query("DELETE FROM team_members WHERE id = ?", (delete_member_map[selected_delete_member],))
                         st.success("Team member deleted successfully.")
                         st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 elif page == "About":
-    st.subheader("About Project War-Room")
+    st.markdown('<div class="section-title">About Project War-Room</div>', unsafe_allow_html=True)
 
     a1, a2, a3 = st.columns(3)
     with a1:
         st.markdown(
             """
-            <div class="info-card">
-                <div class="info-title">What You Can Do</div>
-                <div class="info-copy">
+            <div class="about-card">
+                <div class="mini-title">What You Can Do</div>
+                <div class="subtle-copy">
                     Analyze delivery risks, investigate blocked work, handle critical bugs,
                     review team availability, and maintain a live operational history.
                 </div>
@@ -812,13 +853,12 @@ elif page == "About":
             """,
             unsafe_allow_html=True,
         )
-
     with a2:
         st.markdown(
             """
-            <div class="info-card">
-                <div class="info-title">How It Works</div>
-                <div class="info-copy">
+            <div class="about-card">
+                <div class="mini-title">How It Works</div>
+                <div class="subtle-copy">
                     The Commander Agent coordinates Data Miner, Context Agent, and Tool Operator
                     to convert a plain-English situation into structured project action.
                 </div>
@@ -826,15 +866,14 @@ elif page == "About":
             """,
             unsafe_allow_html=True,
         )
-
     with a3:
         st.markdown(
             """
-            <div class="info-card">
-                <div class="info-title">Best For</div>
-                <div class="info-copy">
+            <div class="about-card">
+                <div class="mini-title">Best For</div>
+                <div class="subtle-copy">
                     Project leads, engineering managers, startup teams, operations teams,
-                    and hackathon demos needing a simple but real local MVP.
+                    and hackathon demos needing a simple but real MVP.
                 </div>
             </div>
             """,
@@ -842,35 +881,45 @@ elif page == "About":
         )
 
     st.markdown("")
-
     b1, b2 = st.columns(2)
     with b1:
         st.markdown(
             """
-            **What is real in this MVP**
-            - Real local database reads
-            - Real local database writes
-            - Real action logging
-            - Real FastAPI + Streamlit flow
-            - ADK-based agent orchestration
-            """
+            <div class="about-card">
+                <div class="mini-title">What Is Real In This MVP</div>
+                <div class="subtle-copy">
+                    ✅ Real local database reads<br>
+                    ✅ Real local database writes<br>
+                    ✅ Real action logging<br>
+                    ✅ Real FastAPI + Streamlit flow<br>
+                    ✅ ADK-based orchestration<br>
+                    ✅ Real Google Calendar action<br>
+                    ✅ MCP-based operations mode
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-
     with b2:
         st.markdown(
             """
-            **Future scope**
-            - Slack integration
-            - Jira integration
-            - Google Calendar integration
-            - AlloyDB migration
-            - Vector search / semantic retrieval
-            - Multi-user auth and project spaces
-            """
+            <div class="about-card">
+                <div class="mini-title">Future Scope</div>
+                <div class="subtle-copy">
+                    → Slack integration<br>
+                    → Jira integration<br>
+                    → AlloyDB migration<br>
+                    → Vector search / semantic retrieval<br>
+                    → Multi-user workspaces<br>
+                    → Authentication
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
 st.markdown("---")
 st.markdown(
-    '<div class="footer-note">Built with ADK, FastAPI, Streamlit, and SQLite for a clean local MVP workflow.</div>',
+    '<div class="footer-note">Built with ADK · FastAPI · Streamlit · SQLite · Google ADK · MCP</div>',
     unsafe_allow_html=True
 )
