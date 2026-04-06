@@ -1,7 +1,23 @@
+import os
+import sys
 import sqlite3
 import uuid
 import requests
 import streamlit as st
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from database.data_store import (
+    get_all_tasks,
+    add_task,
+    update_task,
+    delete_task,
+    get_all_team_members,
+    add_team_member,
+    update_team_member_availability,
+    delete_team_member,
+    get_action_logs,
+)
 
 API_URL = "http://localhost:8080/analyze"
 DAILY_URL = "http://localhost:8080/analyze-daily"
@@ -9,37 +25,62 @@ MCP_URL = "http://localhost:8080/analyze-mcp"
 DB_PATH = "database/warroom.db"
 
 
-def fetch_data(query, params=()):
+@st.cache_data(show_spinner=False, ttl=5)
+def cached_agent_runs():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    rows = cur.execute(query, params).fetchall()
+    rows = cur.execute("""
+        SELECT agent_name, stage, message, created_at
+        FROM agent_runs
+        ORDER BY id ASC
+    """).fetchall()
     conn.close()
     return [dict(row) for row in rows]
 
 
-def fetch_one(query, params=()):
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    row = cur.execute(query, params).fetchone()
-    conn.close()
-    return row
+@st.cache_data(show_spinner=False, ttl=5)
+def cached_metrics():
+    tasks = get_all_tasks()
+    team = get_all_team_members()
+    actions = get_action_logs(limit=200)
+
+    total_tasks = len(tasks)
+    open_tasks = len([t for t in tasks if t.get("status") != "Closed"])
+    critical_open = len(
+        [
+            t for t in tasks
+            if t.get("priority") == "Critical" and t.get("status") != "Closed"
+        ]
+    )
+    available_team = len(
+        [
+            member for member in team
+            if member.get("available") in [True, 1, "Available"]
+        ]
+    )
+    logged_actions = len(actions)
+
+    return total_tasks, open_tasks, critical_open, available_team, logged_actions
 
 
-def execute_query(query, params=()):
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute(query, params)
-    conn.commit()
-    conn.close()
+@st.cache_data(show_spinner=False, ttl=5)
+def cached_tasks():
+    return get_all_tasks()
+
+
+@st.cache_data(show_spinner=False, ttl=5)
+def cached_team_members():
+    return get_all_team_members()
+
+
+@st.cache_data(show_spinner=False, ttl=5)
+def cached_action_logs(limit: int):
+    return get_action_logs(limit=limit)
 
 
 def fetch_agent_runs():
-    return fetch_data("""
-        SELECT agent_name, stage, message, created_at
-        FROM agent_runs
-        ORDER BY id ASC
-    """)
+    return cached_agent_runs()
 
 
 def parse_summary(summary: str):
@@ -391,11 +432,7 @@ with top3:
     if st.button("⟳ Refresh", use_container_width=True):
         st.rerun()
 
-task_count = fetch_one("SELECT COUNT(*) FROM tasks")[0]
-open_count = fetch_one("SELECT COUNT(*) FROM tasks WHERE status != 'Closed'")[0]
-critical_count = fetch_one("SELECT COUNT(*) FROM tasks WHERE priority = 'Critical' AND status != 'Closed'")[0]
-available_count = fetch_one("SELECT COUNT(*) FROM team_members WHERE available = 1")[0]
-action_count = fetch_one("SELECT COUNT(*) FROM action_log")[0]
+task_count, open_count, critical_count, available_count, action_count = cached_metrics()
 
 m1, m2, m3, m4, m5 = st.columns(5)
 with m1:
@@ -441,15 +478,12 @@ if page == "Home":
         with quick1:
             if st.button("Critical Bug", use_container_width=True):
                 st.session_state.draft_prompt = "A critical issue is open, delivery is at risk today, and we need an action plan."
-                st.rerun()
         with quick2:
             if st.button("Production Issue", use_container_width=True):
                 st.session_state.draft_prompt = "Production is unstable, users are impacted, and immediate coordination is required."
-                st.rerun()
         with quick3:
             if st.button("Sprint Delay", use_container_width=True):
                 st.session_state.draft_prompt = "Sprint delivery is at risk because some tasks are blocked and deadlines are close."
-                st.rerun()
 
         user_prompt = st.text_area(
             "Your Message",
@@ -472,6 +506,7 @@ if page == "Home":
             st.session_state.chat_history = []
             st.session_state.draft_prompt = ""
             st.session_state.session_id = str(uuid.uuid4())
+            st.cache_data.clear()
             st.rerun()
 
         st.markdown("### Conversation")
@@ -622,18 +657,18 @@ if page == "Home":
 
 elif page == "Tasks":
     st.markdown('<div class="section-title">Current Tasks</div>', unsafe_allow_html=True)
-    tasks = fetch_data("""
-        SELECT id, title, assignee, status, priority, deadline
-        FROM tasks
-        ORDER BY
-            CASE priority
-                WHEN 'Critical' THEN 1
-                WHEN 'High' THEN 2
-                WHEN 'Medium' THEN 3
-                ELSE 4
-            END,
-            id
-    """)
+    tasks = cached_tasks()
+    tasks = [
+        {
+            "id": task.get("id", ""),
+            "title": task.get("title", ""),
+            "assignee": task.get("assignee", ""),
+            "status": task.get("status", ""),
+            "priority": task.get("priority", ""),
+            "deadline": task.get("deadline", ""),
+        }
+        for task in tasks
+    ]
     st.markdown('<div class="panel-card">', unsafe_allow_html=True)
     if tasks:
         st.dataframe(tasks, use_container_width=True)
@@ -643,12 +678,18 @@ elif page == "Tasks":
 
 elif page == "Team":
     st.markdown('<div class="section-title">Team Status</div>', unsafe_allow_html=True)
-    team = fetch_data("""
-        SELECT id, name, role, email, skills,
-               CASE WHEN available = 1 THEN 'Available' ELSE 'Unavailable' END AS availability
-        FROM team_members
-        ORDER BY id
-    """)
+    raw_team = cached_team_members()
+    team = [
+        {
+            "id": member.get("id", ""),
+            "name": member.get("name", ""),
+            "role": member.get("role", ""),
+            "email": member.get("email", ""),
+            "skills": member.get("skills", ""),
+            "availability": "Available" if member.get("available") in [True, 1, "Available"] else "Unavailable",
+        }
+        for member in raw_team
+    ]
     st.markdown('<div class="panel-card">', unsafe_allow_html=True)
     if team:
         st.dataframe(team, use_container_width=True)
@@ -658,23 +699,15 @@ elif page == "Team":
 
 elif page == "Action Log":
     st.markdown('<div class="section-title">Recent Action Log</div>', unsafe_allow_html=True)
-    actions = fetch_data("""
-        SELECT id, tool, action, details, timestamp
-        FROM action_log
-        ORDER BY id DESC
-        LIMIT 20
-    """)
+    actions = cached_action_logs(20)
     st.markdown('<div class="panel-card">', unsafe_allow_html=True)
     if actions:
         st.dataframe(actions, use_container_width=True)
         st.markdown("### 🔗 Real External Actions")
-        calendar_rows = fetch_data("""
-            SELECT id, details, timestamp
-            FROM action_log
-            WHERE tool = 'GoogleCalendar'
-            ORDER BY id DESC
-            LIMIT 10
-        """)
+        calendar_rows = [
+            row for row in cached_action_logs(50)
+            if row.get("tool") == "GoogleCalendar"
+        ][:10]
         if calendar_rows:
             for row in calendar_rows:
                 details = row["details"]
@@ -709,13 +742,15 @@ elif page == "Manage Data":
                 if not title.strip():
                     st.warning("Task title is required.")
                 else:
-                    execute_query(
-                        """
-                        INSERT INTO tasks (title, assignee, status, priority, deadline, description)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                        """,
-                        (title.strip(), assignee.strip(), status, priority, deadline.strip(), description.strip())
+                    add_task(
+                        title.strip(),
+                        assignee.strip(),
+                        status,
+                        priority,
+                        deadline.strip(),
+                        description.strip(),
                     )
+                    st.cache_data.clear()
                     st.success("Task added successfully.")
                     st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -723,28 +758,26 @@ elif page == "Manage Data":
         st.markdown("")
         st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Update Task")
-        task_options = fetch_data("SELECT id, title, assignee, status FROM tasks ORDER BY id")
+        task_options = cached_tasks()
         if task_options:
             task_map = {f"{task['id']} - {task['title']} ({task['status']})": task for task in task_options}
             with st.form("update_task_form"):
                 selected_task_label = st.selectbox("Select Task", list(task_map.keys()))
                 selected_task = task_map[selected_task_label]
-                new_assignee = st.text_input("New Assignee", value=selected_task["assignee"] or "")
+                new_assignee = st.text_input("New Assignee", value=selected_task.get("assignee", "") or "")
                 new_status = st.selectbox(
                     "New Status",
                     ["Open", "In Progress", "Blocked", "Closed"],
                     index=["Open", "In Progress", "Blocked", "Closed"].index(selected_task["status"])
-                    if selected_task["status"] in ["Open", "In Progress", "Blocked", "Closed"] else 0
+                    if selected_task.get("status") in ["Open", "In Progress", "Blocked", "Closed"] else 0
                 )
                 submit_update_task = st.form_submit_button("Update Task", use_container_width=True)
                 if submit_update_task:
                     if not new_assignee.strip():
                         st.warning("Assignee cannot be empty while updating a task.")
                     else:
-                        execute_query(
-                            "UPDATE tasks SET assignee = ?, status = ? WHERE id = ?",
-                            (new_assignee.strip(), new_status, selected_task["id"])
-                        )
+                        update_task(str(selected_task["id"]), new_assignee.strip(), new_status)
+                        st.cache_data.clear()
                         st.success("Task updated successfully.")
                         st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -752,7 +785,7 @@ elif page == "Manage Data":
         st.markdown("")
         st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Delete Task")
-        delete_task_options = fetch_data("SELECT id, title FROM tasks ORDER BY id")
+        delete_task_options = cached_tasks()
         if delete_task_options:
             delete_task_map = {f"{task['id']} - {task['title']}": task["id"] for task in delete_task_options}
             with st.form("delete_task_form"):
@@ -763,7 +796,8 @@ elif page == "Manage Data":
                     if not confirm_delete_task:
                         st.warning("Please confirm task deletion.")
                     else:
-                        execute_query("DELETE FROM tasks WHERE id = ?", (delete_task_map[selected_delete_task],))
+                        delete_task(str(delete_task_map[selected_delete_task]))
+                        st.cache_data.clear()
                         st.success("Task deleted successfully.")
                         st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -782,37 +816,49 @@ elif page == "Manage Data":
                 if not name.strip():
                     st.warning("Team member name is required.")
                 else:
-                    execute_query(
-                        """
-                        INSERT INTO team_members (name, role, email, skills, available)
-                        VALUES (?, ?, ?, ?, ?)
-                        """,
-                        (name.strip(), role.strip(), email.strip(), skills.strip(), 1 if available == "Yes" else 0)
+                    add_team_member(
+                        name.strip(),
+                        role.strip(),
+                        email.strip(),
+                        skills.strip(),
+                        True if available == "Yes" else False,
                     )
+                    st.cache_data.clear()
                     st.success("Team member added successfully.")
                     st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    st.session_state.member_name = ""
+                    st.session_state.member_role = ""
+                    st.session_state.member_email = ""
+                    st.session_state.member_skills = ""
+                    st.cache_data.clear()
+                    st.success("Team member added successfully.")
+                    st.rerun()
+
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown("")
         st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Update Team Availability")
-        member_options = fetch_data("SELECT id, name, available FROM team_members ORDER BY id")
+        member_options = cached_team_members()
         if member_options:
             member_map = {f"{member['id']} - {member['name']}": member for member in member_options}
             with st.form("update_member_form"):
                 selected_member_label = st.selectbox("Select Team Member", list(member_map.keys()))
                 selected_member = member_map[selected_member_label]
+                selected_available = selected_member.get("available")
                 new_availability = st.selectbox(
                     "Availability",
                     ["Available", "Unavailable"],
-                    index=0 if selected_member["available"] == 1 else 1
+                    index=0 if selected_available in [True, 1, "Available"] else 1
                 )
                 submit_update_member = st.form_submit_button("Update Availability", use_container_width=True)
                 if submit_update_member:
-                    execute_query(
-                        "UPDATE team_members SET available = ? WHERE id = ?",
-                        (1 if new_availability == "Available" else 0, selected_member["id"])
+                    update_team_member_availability(
+                        str(selected_member["id"]),
+                        True if new_availability == "Available" else False,
                     )
+                    st.cache_data.clear()
                     st.success("Team member availability updated successfully.")
                     st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -820,7 +866,7 @@ elif page == "Manage Data":
         st.markdown("")
         st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown("### Delete Team Member")
-        delete_member_options = fetch_data("SELECT id, name FROM team_members ORDER BY id")
+        delete_member_options = cached_team_members()
         if delete_member_options:
             delete_member_map = {f"{member['id']} - {member['name']}": member["id"] for member in delete_member_options}
             with st.form("delete_member_form"):
@@ -831,7 +877,8 @@ elif page == "Manage Data":
                     if not confirm_delete_member:
                         st.warning("Please confirm team member deletion.")
                     else:
-                        execute_query("DELETE FROM team_members WHERE id = ?", (delete_member_map[selected_delete_member],))
+                        delete_team_member(str(delete_member_map[selected_delete_member]))
+                        st.cache_data.clear()
                         st.success("Team member deleted successfully.")
                         st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -846,8 +893,8 @@ elif page == "About":
             <div class="about-card">
                 <div class="mini-title">What You Can Do</div>
                 <div class="subtle-copy">
-                    Analyze delivery risks, investigate blocked work, handle critical bugs,
-                    review team availability, and maintain a live operational history.
+                   Analyze delivery risks, review blocked work, monitor team availability,
+                    run operational checks, and coordinate urgent responses from a single dashboard
                 </div>
             </div>
             """,
@@ -860,7 +907,7 @@ elif page == "About":
                 <div class="mini-title">How It Works</div>
                 <div class="subtle-copy">
                     The Commander Agent coordinates Data Miner, Context Agent, and Tool Operator
-                    to convert a plain-English situation into structured project action.
+                    to analyze project state, retrieve supporting context, and produce structured operational guidance.
                 </div>
             </div>
             """,
@@ -873,7 +920,7 @@ elif page == "About":
                 <div class="mini-title">Best For</div>
                 <div class="subtle-copy">
                     Project leads, engineering managers, startup teams, operations teams,
-                    and hackathon demos needing a simple but real MVP.
+                    and hackathon demos that need an AI-powered project operations workflow.
                 </div>
             </div>
             """,
@@ -886,15 +933,15 @@ elif page == "About":
         st.markdown(
             """
             <div class="about-card">
-                <div class="mini-title">What Is Real In This MVP</div>
+               <div class="mini-title">Current Implementation</div>
                 <div class="subtle-copy">
-                    ✅ Real local database reads<br>
-                    ✅ Real local database writes<br>
-                    ✅ Real action logging<br>
-                    ✅ Real FastAPI + Streamlit flow<br>
-                    ✅ ADK-based orchestration<br>
-                    ✅ Real Google Calendar action<br>
-                    ✅ MCP-based operations mode
+                    ✅ Firestore-backed project data<br>
+                    ✅ FastAPI + Streamlit workflow<br>
+                    ✅ ADK-based multi-agent orchestration<br>
+                    ✅ Google Calendar coordination action<br>
+                    ✅ MCP-based operations mode<br>
+                    ✅ Action logging and agent activity tracking<br>
+                    ✅ Interactive and autonomous analysis modes
                 </div>
             </div>
             """,
@@ -908,10 +955,10 @@ elif page == "About":
                 <div class="subtle-copy">
                     → Slack integration<br>
                     → Jira integration<br>
-                    → AlloyDB migration<br>
-                    → Vector search / semantic retrieval<br>
-                    → Multi-user workspaces<br>
-                    → Authentication
+                    → Vector search based context retrieval<br>
+                    → Multi-project workspaces<br>
+                    → Authentication and access control<br>
+                    → Cloud-native production hardening
                 </div>
             </div>
             """,

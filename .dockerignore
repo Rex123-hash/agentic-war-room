@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+token.json
+credentials.json
+.git
+.gitignore
+.venv/
+venv/
+database/warroom.db

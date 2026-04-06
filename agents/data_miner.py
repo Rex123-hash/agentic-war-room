@@ -9,6 +9,8 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.tools import FunctionTool
 from google.genai import types
 
+from database.data_store import get_all_tasks, get_all_team_members
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
@@ -72,42 +74,65 @@ Return concise structured findings for the Commander.
 """
 
 
-async def run_data_miner(query: str) -> str:
-    print(f"[DATA MINER] Query: {query}")
-    log_agent_event("DataMinerAgent", "started", query)
+async def run_data_miner(goal: str) -> str:
+    log_agent_event("DataMinerAgent", "started", goal)
 
-    agent = LlmAgent(
-        name="DataMinerAgent",
-        model=GEMINI_MODEL,
-        instruction=DATA_MINER_PROMPT,
-        tools=[
-            FunctionTool(get_all_tasks),
-            FunctionTool(get_critical_tasks),
-            FunctionTool(get_available_developers),
-            FunctionTool(get_team_status),
-            FunctionTool(get_blocked_tasks),
-        ],
-    )
+    raw_tasks = get_all_tasks()
+    raw_team_members = get_all_team_members()
 
-    session_service = InMemorySessionService()
-    runner = Runner(agent=agent, app_name="agentic-war-room", session_service=session_service)
-    session = await session_service.create_session(app_name="agentic-war-room", user_id="user_001")
+    tasks = [item for item in raw_tasks if isinstance(item, dict)]
+    team_members = [item for item in raw_team_members if isinstance(item, dict)]
 
-    message = types.Content(role="user", parts=[types.Part(text=query)])
-    response_text = ""
+    open_tasks = [t for t in tasks if t.get("status") != "Closed"]
+    blocked_tasks = [t for t in tasks if t.get("status") == "Blocked"]
+    critical_tasks = [
+        t for t in tasks
+        if t.get("priority") == "Critical" and t.get("status") != "Closed"
+    ]
+    available_members = [
+        m for m in team_members
+        if m.get("available") in [True, 1, "Available"]
+    ]
+    unavailable_members = [
+        m for m in team_members
+        if m.get("available") not in [True, 1, "Available"]
+    ]
 
-    async for event in runner.run_async(
-        user_id="user_001",
-        session_id=session.id,
-        new_message=message,
-    ):
-        if event.is_final_response() and event.content and event.content.parts:
-            response_text = event.content.parts[0].text
-            print("[DATA MINER] Done")
-            log_agent_event("DataMinerAgent", "completed", response_text[:500])
+    task_snapshot = []
+    for task in open_tasks[:5]:
+        task_snapshot.append(
+            f"- {task.get('title', 'Untitled')} | "
+            f"Assignee: {task.get('assignee', 'Unassigned')} | "
+            f"Status: {task.get('status', 'Unknown')} | "
+            f"Priority: {task.get('priority', 'Unknown')} | "
+            f"Deadline: {task.get('deadline', 'N/A')}"
+        )
 
-    return response_text
+    team_snapshot = []
+    for member in team_members[:5]:
+        availability = "Available" if member.get("available") in [True, 1, "Available"] else "Unavailable"
+        team_snapshot.append(
+            f"- {member.get('name', 'Unknown')} | "
+            f"Role: {member.get('role', 'N/A')} | "
+            f"Availability: {availability}"
+        )
 
+    summary = f"""
+Open Tasks: {len(open_tasks)}
+Blocked Tasks: {len(blocked_tasks)}
+Critical Open Tasks: {len(critical_tasks)}
+Available Team Members: {len(available_members)}
+Unavailable Team Members: {len(unavailable_members)}
+
+Task Snapshot:
+{chr(10).join(task_snapshot) if task_snapshot else "- No open tasks found"}
+
+Team Snapshot:
+{chr(10).join(team_snapshot) if team_snapshot else "- No team members found"}
+""".strip()
+
+    log_agent_event("DataMinerAgent", "completed", "Project data analyzed")
+    return summary
 
 async def main():
     result = await run_data_miner("What are the critical tasks, blocked tasks, and available developers right now?")

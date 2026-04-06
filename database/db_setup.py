@@ -1,5 +1,11 @@
 import os
+import sys
 import sqlite3
+from datetime import datetime, UTC
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from database.firestore_db import is_firestore_enabled, upsert_document
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "warroom.db")
 
@@ -8,7 +14,7 @@ def get_connection():
     return sqlite3.connect(DB_PATH)
 
 
-def setup_database():
+def setup_sqlite_database():
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -70,7 +76,35 @@ def setup_database():
 
     conn.commit()
     conn.close()
-    print("Database setup complete.")
+
+
+def setup_firestore_collections():
+    if not is_firestore_enabled():
+        print("Firestore is not enabled. Skipping Firestore setup.")
+        return
+
+    now = datetime.now(UTC).isoformat()
+
+    bootstrap_docs = {
+        "system_meta": {
+            "app": "Project War-Room",
+            "status": "initialized",
+            "initialized_at": now,
+        }
+    }
+
+    for doc_id, payload in bootstrap_docs.items():
+        upsert_document("system_meta", doc_id, payload)
+
+    print("Firestore bootstrap complete.")
+
+
+def setup_database():
+    setup_sqlite_database()
+    print("SQLite setup complete.")
+
+    if is_firestore_enabled():
+        setup_firestore_collections()
 
 
 if __name__ == "__main__":

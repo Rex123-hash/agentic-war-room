@@ -5,3 +5,4 @@ uvicorn
 streamlit
 python-dotenv
 requests
+google-cloud-firestore
