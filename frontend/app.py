@@ -19,9 +19,9 @@ from database.data_store import (
     get_action_logs,
 )
 
-API_URL = "https://war-room-1084326176729.us-central1.run.app/analyze"
-DAILY_URL = "https://war-room-1084326176729.us-central1.run.app/analyze-daily"
-MCP_URL = "https://war-room-1084326176729.us-central1.run.app/analyze-mcp"
+API_URL = "https://project-war-room-1084326176729.us-central1.run.app/analyze"
+DAILY_URL = "https://project-war-room-1084326176729.us-central1.run.app/analyze-daily"
+MCP_URL = "https://project-war-room-1084326176729.us-central1.run.app/analyze-mcp"
 DB_PATH = "database/warroom.db"
 
 
