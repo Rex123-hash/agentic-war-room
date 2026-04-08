@@ -32,7 +32,7 @@ We move beyond simple chatbots by using specialized agents to handle complex, mu
 
 ## 📈 Architecture & Workflow
 Project War-Room is built on a decoupled, event-driven architecture optimized for **Google Cloud**.
-![alt text](Architecture.png)
+![Architecture](assets/architecture.png)
 
 **The Workflow Logic:**
 1.  **Ingress:** The user submits a project query via the **Streamlit** frontend to a secure **FastAPI** endpoint on **Cloud Run**.
@@ -76,7 +76,7 @@ gcloud builds submit --tag gcr.io/agentic-war-room-492207/war-room-backend
 # Deploy Backend
 gcloud run deploy war-room-backend --image gcr.io/agentic-war-room-492207/war-room-backend --platform managed --allow-unauthenticated
 ```
-![alt text](Frontend.png)
+![Frontend](assets/frontend.png)
 
 ---
 
