@@ -16,6 +16,9 @@ EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 def get_calendar_service():
+    if not os.path.exists(CREDENTIALS_PATH):
+        raise FileNotFoundError(f"Missing credentials file: {CREDENTIALS_PATH}")
+
     creds = None
 
     if os.path.exists(TOKEN_PATH):
@@ -51,7 +54,22 @@ def create_calendar_event(
     duration_minutes: int,
     description: str,
 ) -> dict:
-    service = get_calendar_service()
+    try:
+        service = get_calendar_service()
+    except FileNotFoundError:
+        return {
+            "status": "skipped",
+            "reason": "Google Calendar credentials not available in deployed environment",
+            "title": title,
+            "valid_attendees_count": 0,
+        }
+    except Exception as exc:
+        return {
+            "status": "skipped",
+            "reason": f"Calendar integration unavailable: {exc}",
+            "title": title,
+            "valid_attendees_count": 0,
+        }
 
     start_time = datetime.now(timezone.utc) + timedelta(minutes=10)
     end_time = start_time + timedelta(minutes=duration_minutes)
