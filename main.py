@@ -4,6 +4,9 @@ from pydantic import BaseModel
 from agents.commander import run_commander
 from agents.mcp_ops_agent import run_mcp_ops_agent
 from database.chat_memory import save_message, get_recent_messages
+from database.db_setup import setup_database
+
+setup_database()
 
 app = FastAPI(
     title="Agentic Project War-Room",

@@ -6,3 +6,8 @@ streamlit
 python-dotenv
 requests
 google-cloud-firestore
+google-auth
+google-auth-oauthlib
+google-auth-oauthlib
+mcp
+google-genai

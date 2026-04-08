@@ -1,9 +1,6 @@
 import os
-import sys
 import sqlite3
 from datetime import datetime, UTC
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database.firestore_db import is_firestore_enabled, upsert_document
 

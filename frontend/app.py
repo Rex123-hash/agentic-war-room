@@ -19,24 +19,29 @@ from database.data_store import (
     get_action_logs,
 )
 
-API_URL = "http://localhost:8080/analyze"
-DAILY_URL = "http://localhost:8080/analyze-daily"
-MCP_URL = "http://localhost:8080/analyze-mcp"
+API_URL = "https://war-room-1084326176729.us-central1.run.app/analyze"
+DAILY_URL = "https://war-room-1084326176729.us-central1.run.app/analyze-daily"
+MCP_URL = "https://war-room-1084326176729.us-central1.run.app/analyze-mcp"
 DB_PATH = "database/warroom.db"
 
 
 @st.cache_data(show_spinner=False, ttl=5)
 def cached_agent_runs():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-    rows = cur.execute("""
-        SELECT agent_name, stage, message, created_at
-        FROM agent_runs
-        ORDER BY id ASC
-    """).fetchall()
-    conn.close()
-    return [dict(row) for row in rows]
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        rows = cur.execute("""
+            SELECT agent_name, stage, message, created_at
+            FROM agent_runs
+            ORDER BY id ASC
+        """).fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+    except sqlite3.OperationalError:
+        return []
+    except Exception:
+        return []
 
 
 @st.cache_data(show_spinner=False, ttl=5)
@@ -80,7 +85,12 @@ def cached_action_logs(limit: int):
 
 
 def fetch_agent_runs():
-    return cached_agent_runs()
+    try:
+        return cached_agent_runs()
+    except sqlite3.OperationalError:
+        return []
+    except Exception:
+        return []
 
 
 def parse_summary(summary: str):
