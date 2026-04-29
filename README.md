@@ -1,8 +1,3 @@
-This is your **final, high-octane, "Top 10" caliber README**. It is specifically tuned for the **Gen AI Academy APAC 2026** judges by highlighting the **Google ADK**, **MCP**, and **Cloud Run** integrations.
-
-Copy and paste the content below into your `README.md` file.
-
----
 
 # 🚀 Project War-Room
 ### AI-Powered Multi-Agent Project Operations Platform
