@@ -9,7 +9,7 @@ import streamlit as st
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database.db_setup import DB_PATH, get_connection
+from database.db_setup import DB_PATH, get_connection, setup_database
 from database.data_store import (
     get_all_tasks,
     add_task,
@@ -30,6 +30,8 @@ API_KEY = os.getenv("WAR_ROOM_API_KEY", "")
 UI_ACCESS_KEY = os.getenv("WAR_ROOM_UI_ACCESS_KEY") or API_KEY
 DISABLE_UI_AUTH = os.getenv("WAR_ROOM_DISABLE_UI_AUTH", "false").lower() == "true"
 DEFAULT_PROMPT = "A critical issue is open, delivery is at risk today, and we need an action plan."
+
+setup_database()
 
 
 def is_local_request() -> bool:
