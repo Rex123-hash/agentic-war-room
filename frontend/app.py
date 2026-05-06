@@ -987,7 +987,7 @@ def show_structured_result(summary: str, mode_label: str):
     )
 
 
-st.set_page_config(page_title="Project War-Room", page_icon="🚨", layout="wide")
+st.set_page_config(page_title="Project War-Room", page_icon="🛡️", layout="wide")
 
 if "theme" not in st.session_state:
     st.session_state.theme = "Dark"
