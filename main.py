@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from agents.commander import run_commander
 from agents.mcp_ops_agent import run_mcp_ops_agent
+from agents.tool_operator import create_real_calendar_huddle, DEFAULT_HUDDLE_EMAIL
 from database.chat_memory import save_message, get_recent_messages
 from database.db_setup import setup_database
 
@@ -99,6 +100,62 @@ def is_small_talk(goal: str) -> bool:
     }
 
 
+def needs_calendar_huddle(goal: str) -> bool:
+    goal_lower = goal.lower()
+    triggers = [
+        "critical",
+        "delivery is at risk",
+        "delivery risk",
+        "production",
+        "unstable",
+        "emergency huddle",
+        "calendar",
+        "immediate coordination",
+    ]
+    return any(trigger in goal_lower for trigger in triggers)
+
+
+def calendar_status_summary(goal: str, calendar_result: dict) -> str:
+    reason = calendar_result.get("reason", "Calendar did not return a reason.")
+    status = calendar_result.get("status", "unknown")
+    event_link = calendar_result.get("event_link", "")
+
+    calendar_action = f"Google Calendar huddle attempt returned status={status}."
+    if event_link:
+        calendar_action += f" Event: {event_link}"
+    elif reason:
+        calendar_action += f" Reason: {reason}"
+
+    return f"""EXECUTIVE SUMMARY
+=================
+Status: RED
+Red Flags:
+- The situation is urgent and delivery coordination is at risk.
+- Google Calendar could not create the emergency huddle automatically.
+- Manual coordination is needed until Calendar OAuth is repaired.
+Actions Taken:
+- Classified the request as a critical coordination issue.
+- Attempted to create a Google Calendar emergency huddle with the configured default attendee.
+- {calendar_action}
+Recommendations:
+- Start the emergency huddle manually with the project owner and available team.
+- Re-enable or replace the Google OAuth client, then refresh the Calendar token.
+- Re-run Critical Bug analysis after Calendar credentials are repaired.
+"""
+
+
+def run_calendar_preflight(goal: str) -> dict | None:
+    if not needs_calendar_huddle(goal):
+        return None
+
+    return create_real_calendar_huddle(
+        title="Project War-Room Emergency Huddle",
+        attendees=DEFAULT_HUDDLE_EMAIL,
+        duration_minutes=15,
+        description=f"Auto-created by Project War-Room for: {goal[:500]}",
+    )
+
+
 async def safe_run(goal: str, session_id: str) -> SummaryResponse:
     if is_small_talk(goal):
         return SummaryResponse(
@@ -111,13 +168,28 @@ async def safe_run(goal: str, session_id: str) -> SummaryResponse:
         ),
     )
     try:
-        contextual_goal = build_chat_context(session_id, goal)
+        calendar_preflight = run_calendar_preflight(goal)
+        goal_with_preflight = goal
+        if calendar_preflight:
+            goal_with_preflight = (
+                f"{goal}\n\nPre-executed Google Calendar huddle result: {calendar_preflight}\n"
+                "Use this pre-executed Calendar result in Actions Taken. "
+                "This preflight counts as the real Tool Operator Calendar attempt. "
+                "Do not retry Calendar and do not claim Calendar is awaiting attendee emails if the result includes a default attendee."
+            )
+
+        contextual_goal = build_chat_context(session_id, goal_with_preflight)
         result = await asyncio.wait_for(run_commander(contextual_goal), timeout=45)
+        if not result:
+            result = calendar_status_summary(goal, calendar_preflight) if calendar_preflight else fallback_summary(goal)
         save_message(session_id, "user", goal)
         save_message(session_id, "assistant", result)
         return SummaryResponse(status="success", summary=result)
     except asyncio.TimeoutError:
-        fallback = fallback_summary(goal)
+        if "calendar_preflight" in locals() and calendar_preflight:
+            fallback = calendar_status_summary(goal, calendar_preflight)
+        else:
+            fallback = fallback_summary(goal)
         save_message(session_id, "user", goal)
         save_message(session_id, "assistant", fallback)
         return SummaryResponse(status="fallback", summary=fallback)

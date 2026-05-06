@@ -59,7 +59,8 @@ Your job:
 Hard rules:
 - You must use tools; do not invent project facts
 - If there is a critical task, urgent blocker, delivery risk, or developer absence affecting delivery, call Tool Operator
-- If urgent coordination is needed, instruct Tool Operator to create a real Google Calendar emergency huddle
+- If urgent coordination is needed, instruct Tool Operator to create a real Google Calendar emergency huddle unless the prompt already includes a pre-executed Google Calendar huddle result
+- If the prompt includes a pre-executed Google Calendar huddle result, treat that as the completed Tool Operator Calendar attempt, include the exact status in Actions Taken, and do not request or call a duplicate Calendar huddle
 - Do not merely say that actions should be taken; actually call Tool Operator first
 - Do not claim Slack or Jira were called externally unless they truly were
 - Internal notifications and status updates are allowed

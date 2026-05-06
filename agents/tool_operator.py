@@ -75,12 +75,16 @@ def create_real_calendar_huddle(title: str, attendees: str, duration_minutes: in
 
     event_link = result.get("event_link", "")
     valid_attendees = result.get("valid_attendees_count", 0)
+    status = result.get("status", "unknown")
+    reason = result.get("reason", "")
 
     details = (
-        f"Calendar event created | "
+        f"Calendar huddle result | "
+        f"status={status} | "
         f"title={title} | "
         f"valid_attendees={valid_attendees} | "
-        f"event_link={event_link}"
+        f"event_link={event_link} | "
+        f"reason={reason}"
     )
 
     _log_action("GoogleCalendar", "create_real_calendar_huddle", details)
@@ -110,23 +114,31 @@ You can:
 - record notifications
 - create a real Google Calendar huddle
 - inspect recent action logs
+
+Rules:
+- If a calendar tool returns status=success, report the event link.
+- If a calendar tool returns status=skipped or error, report the exact reason and recommend manual scheduling.
+- Do not say you are waiting for email addresses when DEFAULT_HUDDLE_EMAIL was already used.
 """
 
 
 async def run_tool_operator(instructions: str) -> dict:
     print(f"[TOOL OPERATOR] Instructions: {instructions[:100]}...")
     log_agent_event("ToolOperatorAgent", "started", instructions[:500])
+    preflight_notes = []
 
     if _needs_huddle(instructions):
         try:
-            create_real_calendar_huddle(
+            result = create_real_calendar_huddle(
                 title="Project War-Room Emergency Huddle",
                 attendees=DEFAULT_HUDDLE_EMAIL,
                 duration_minutes=15,
                 description="Auto-created by Project War-Room during critical project risk handling.",
             )
+            preflight_notes.append(f"Calendar preflight result: {result}")
         except Exception as exc:
             _log_action("GoogleCalendar", "create_real_calendar_huddle_failed", f"error={exc}")
+            preflight_notes.append(f"Calendar preflight failed: {exc}")
 
     agent = LlmAgent(
         name="ToolOperatorAgent",
@@ -145,7 +157,11 @@ async def run_tool_operator(instructions: str) -> dict:
     runner = Runner(agent=agent, app_name="agentic-war-room", session_service=session_service)
     session = await session_service.create_session(app_name="agentic-war-room", user_id="user_001")
 
-    message = types.Content(role="user", parts=[types.Part(text=instructions)])
+    full_instructions = instructions
+    if preflight_notes:
+        full_instructions = instructions + "\n\n" + "\n".join(preflight_notes)
+
+    message = types.Content(role="user", parts=[types.Part(text=full_instructions)])
     response_text = ""
 
     async for event in runner.run_async(

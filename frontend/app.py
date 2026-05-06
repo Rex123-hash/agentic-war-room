@@ -1005,7 +1005,7 @@ if st.session_state.get("home_prompt") == DEFAULT_PROMPT:
     st.session_state.home_prompt = ""
 
 if "session_token" not in st.session_state:
-    st.session_state.session_token = None
+    st.session_state.session_token = secrets.token_urlsafe(16)
 
 if "nav_page" not in st.session_state:
     st.session_state.nav_page = "Home"
@@ -1123,7 +1123,7 @@ elif page == "Agents":
         quick1, quick2, quick3 = st.columns(3)
         with quick1:
             if st.button("Critical Bug", use_container_width=True):
-                st.session_state.draft_prompt = "A critical issue is open, delivery is at risk today, and we need an action plan."
+                st.session_state.draft_prompt = "A critical issue is open, delivery is at risk today, and we need an action plan. Create a Google Calendar emergency huddle for immediate coordination."
         with quick2:
             if st.button("Production Issue", use_container_width=True):
                 st.session_state.draft_prompt = "Production is unstable, users are impacted, and immediate coordination is required."
@@ -1153,7 +1153,7 @@ elif page == "Agents":
         if clear_chat:
             st.session_state.chat_history = []
             st.session_state.draft_prompt = ""
-            st.session_state.session_token = None
+            st.session_state.session_token = secrets.token_urlsafe(16)
             st.cache_data.clear()
             st.rerun()
 
@@ -1216,7 +1216,7 @@ elif page == "Agents":
                         API_URL,
                         json={
                             "goal": user_prompt,
-                            "session_token": st.session_state.session_token,
+                            "session_id": st.session_state.session_token,
                         },
                         headers=get_api_headers(),
                         timeout=45,
@@ -1225,7 +1225,7 @@ elif page == "Agents":
                     if response.status_code == 200:
                         data = response.json()
                         summary = data["summary"]
-                        st.session_state.session_token = data.get("session_token")
+                        st.session_state.session_token = data.get("session_id", st.session_state.session_token)
                         st.session_state.chat_history.append({"role": "assistant", "content": summary})
 
                         if data["status"] == "fallback":
@@ -1298,7 +1298,7 @@ elif page == "Agents":
                     MCP_URL,
                     json={
                         "goal": mcp_goal,
-                        "session_token": st.session_state.session_token,
+                        "session_id": st.session_state.session_token,
                     },
                     headers=get_api_headers(),
                     timeout=45,
@@ -1307,7 +1307,7 @@ elif page == "Agents":
                 if response.status_code == 200:
                     data = response.json()
                     summary = data["summary"]
-                    st.session_state.session_token = data.get("session_token")
+                    st.session_state.session_token = data.get("session_id", st.session_state.session_token)
                     st.session_state.chat_history.append({"role": "assistant", "content": summary})
 
                     if data["status"] == "fallback":
