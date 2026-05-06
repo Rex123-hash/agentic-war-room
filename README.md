@@ -1,106 +1,117 @@
+# Project War-Room
 
-# 🚀 Project War-Room
-### AI-Powered Multi-Agent Project Operations Platform
+Project War-Room is a cloud-deployed multi-agent operations dashboard for project risk, delivery blockers, team availability, action logging, and AI-assisted incident response.
 
-**Project War-Room** is a high-fidelity AI command center designed to eliminate the "30% status-gathering tax" faced by project leads. Built on the **Google ADK (Agent Development Kit)**, the platform transforms fragmented signals into actionable operational intelligence using a **Router-Worker agentic design pattern**.
+The app combines a polished dark dashboard UI with a FastAPI backend, Google ADK agents, Gemini reasoning, SQLite-backed local project data, optional Firestore support, and Cloud Run deployment.
 
----
+## Live Deployment
 
-## 🏗 Key Innovation: MCP Tool Integration
-To bridge the gap between "Project Data" and "Real-World Time," Project War-Room implements the **Model Context Protocol (MCP)** for cross-tool coordination:
+- Frontend: https://war-room-frontend-bdtynmiyrq-el.a.run.app
+- Backend: https://war-room-backend-bdtynmiyrq-el.a.run.app
+- Health check: https://war-room-backend-bdtynmiyrq-el.a.run.app/health
 
-* **Google Calendar MCP Integration:** The **Context Agent** factors in team availability and "Out of Office" (OOO) status when evaluating task delays.
-* **Concrete Tool Execution:** The system uses `google_calendar_list_events` to identify scheduling conflicts before the **Commander Agent** proposes a recovery plan.
-* **Extensible Architecture:** Designed to support `stdio` transport, allowing for rapid integration of Jira, GitHub, or Slack MCP servers.
+## Core Features
 
----
+- Introductory home page with shortcuts into the operational workspace
+- Dark executive dashboard with project metrics, navigation, and quick insight panels
+- Agent analysis page for natural-language project situations
+- Executive summary output with red flags, actions taken, and recommendations
+- Daily autonomous project health check
+- MCP operations check mode for protocol-oriented operational workflows
+- Current tasks page with search, filtering, priority/status visibility, and CSV export
+- Team page for availability and team member review
+- Action log page for auditability
+- Manage Data page for adding, updating, and deleting tasks or team members
+- About page explaining the architecture and workflow
+- SQLite-backed persistence for tasks, team members, action logs, agent runs, and chat memory
+- Optional Firestore integration through environment configuration
+- Cloud Run deployment with separate backend and frontend services
 
-## 🤖 Multi-Agent Architecture (Google ADK)
-We move beyond simple chatbots by using specialized agents to handle complex, multi-step workflows:
+## Agent Architecture
 
-* **Commander Agent (Router):** The central brain (Gemini 1.5) that parses natural language intent and dispatches sub-tasks.
-* **Data Miner Agent (Worker):** Executes structured queries against **Firestore (Native Mode)** to retrieve real-time task state and priorities.
-* **Context Agent (Worker):** Layers operational logic and external context (via MCP) over raw data to ground responses in reality.
-* **Tool Operator Agent (Worker):** Manages the execution of protocol-based workflows and external tool-based operational steps.
+Project War-Room uses Google ADK with a router-worker pattern:
 
----
+- Commander Agent: reads the user situation, routes work, and produces the final operational briefing
+- Data Miner Agent: checks project task state, priorities, deadlines, team availability, and action data
+- Context Agent: adds operating context, SOP-style guidance, and prior-decision awareness
+- Tool Operator Agent: attempts concrete operational actions when risk is high
+- MCP Ops Agent: supports MCP-oriented operational checks
 
-## 📈 Architecture & Workflow
-Project War-Room is built on a decoupled, event-driven architecture optimized for **Google Cloud**.
-![alt text](Architecture.png)
+## Tech Stack
 
-**The Workflow Logic:**
-1.  **Ingress:** The user submits a project query via the **Streamlit** frontend to a secure **FastAPI** endpoint on **Cloud Run**.
-2.  **Orchestration:** The **Commander Agent** (Google ADK) acts as the primary router, deconstructing the query into specialized sub-tasks.
-3.  **Data Retrieval:** The **Data Miner** performs a targeted lookup in **Firestore (Native Mode)** for task metadata and blockers.
-4.  **External Context:** The **Context Agent** uses the **Model Context Protocol (MCP)** to pull live availability from **Google Calendar**.
-5.  **Synthesis:** **Gemini** processes the combined data (Firestore + MCP) to perform cross-agent reasoning and generate a high-density "War-Room" briefing.
-6.  **Actionable Output:** Results and agent activity logs are streamed back to the UI for full auditability.
+- Frontend: Streamlit
+- Backend: FastAPI
+- AI orchestration: Google ADK
+- Model: Gemini 2.5 Flash through Vertex AI / Google GenAI configuration
+- Data: SQLite by default, optional Firestore
+- Deployment: Google Cloud Run
+- Build pipeline: Google Cloud Build
+- Container registry: Artifact Registry
 
----
+## Local Development
 
-## 🛡 Cloud-Native Security & Scalability
-* **Identity & Access Management (IAM):** Uses Google Cloud IAM service accounts for **keyless authentication** between Cloud Run and Firestore, adhering to the **Principle of Least Privilege (PoLP)**.
-* **Serverless Scaling:** Deployed on **Google Cloud Run**, ensuring the backend scales horizontally based on demand.
-* **Secure Configuration:** Secrets and environment variables are managed via the Google Cloud ecosystem, with a roadmap for **Secret Manager** integration.
+Install dependencies:
 
----
-
-## 🚀 Getting Started
-
-### Run Locally
 ```bash
-# Clone and enter the repo
-git clone https://github.com/Rex123-hash/agentic-war-room.git && cd project-war-room
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Start the Backend
-uvicorn main:app --reload
-
-# Start the Frontend (In a New Terminal)
-streamlit run app.py
 ```
 
-### Deploy to Google Cloud Run
+Start the backend:
+
 ```bash
-# Build and Push to Artifact Registry
-gcloud builds submit --tag gcr.io/agentic-war-room-492207/war-room-backend
-
-# Deploy Backend
-gcloud run deploy war-room-backend --image gcr.io/agentic-war-room-492207/war-room-backend --platform managed --allow-unauthenticated
+python main.py
 ```
-![alt text](Frontend.png)
 
----
+Start the frontend in another terminal:
 
-## ⚖ Judging Alignment (APAC 2026 Criteria)
-| Criterion                | Project War-Room Implementation                                                |
-| :----------------------- | :----------------------------------------------------------------------------- |
-| **Technical Execution**  | Advanced use of **Google ADK** for multi-agent coordination.                   |
-| **Innovation (MCP)**     | First-class **Model Context Protocol** integration for real-world tool use.    |
-| **Architecture**         | Secure, decoupled stack: **Streamlit + FastAPI + Firestore (Native Mode)**.    |
-| **Feasibility**          | Fully functional prototype deployed on **Cloud Run** with **Cloud Build**.     |
-| **Problem-Solution Fit** | Directly automates the manual "status-gathering tax" for Engineering Managers. |
+```bash
+streamlit run frontend/app.py
+```
 
----
+By default, the frontend expects the backend at `http://127.0.0.1:8080`.
 
-## 🧰 Tech Stack
-* **Intelligence:** Gemini (via Google AI / Vertex AI integration)
-* **Orchestration:** Google ADK (Agent Development Kit)
-* **Database:** Google Firestore (Native Mode)
-* **Compute:** Google Cloud Run (Containerized via Docker)
-* **Protocol:** Model Context Protocol (MCP)
-* **CI/CD:** Google Cloud Build
+## Environment Variables
 
----
+Useful variables:
 
-## **Team**
--Built collaboratively by:
-1. Amaan Khan
-2. Srishti Rathi
+- `WAR_ROOM_BACKEND_URL`: backend URL used by the frontend
+- `WAR_ROOM_API_KEY`: shared frontend-to-backend app key when enabled
+- `WAR_ROOM_DISABLE_UI_AUTH`: set to `true` to skip the UI access screen
+- `GOOGLE_CLOUD_PROJECT`: Google Cloud project for Vertex AI
+- `GOOGLE_CLOUD_LOCATION`: Vertex AI location, for example `us-central1`
+- `GOOGLE_GENAI_USE_VERTEXAI`: set to `true` for Vertex AI mode
+- `GEMINI_MODEL`: primary model, currently `gemini-2.5-flash`
+- `GEMINI_FALLBACK_MODEL`: fallback model, currently `gemini-2.5-flash-lite`
+- `USE_FIRESTORE`: set to `true` to use Firestore instead of SQLite for data-store helpers
 
+## Cloud Run Deployment
 
-### **Submission Note for Judges:**
-This project focuses on the intersection of agentic reasoning and operational data. It demonstrates how AI can move from a simple chat interface to a proactive decision-support layer by securely interacting with project management tools and calendars via standardized protocols.
+The project is deployed as two services:
+
+- `war-room-backend`: FastAPI API and ADK agent orchestration
+- `war-room-frontend`: Streamlit dashboard UI
+
+Images are stored in Artifact Registry:
+
+```text
+asia-south1-docker.pkg.dev/project-track-1-491917/war-room/war-room-backend:latest
+asia-south1-docker.pkg.dev/project-track-1-491917/war-room/war-room-frontend:latest
+```
+
+## Streamlit Note
+
+The current app relies on Streamlit only for the frontend. The backend is already separate FastAPI, so the clean path away from Streamlit is to rebuild the UI in React, Next.js, or Vite and call the existing backend endpoints:
+
+- `GET /health`
+- `POST /analyze`
+- `POST /analyze-daily`
+- `POST /analyze-mcp`
+
+That migration would give smoother navigation, full control over animations, stronger production UI patterns, and easier custom branding while preserving the current backend and agents.
+
+## Team
+
+Built by:
+
+- Amaan Khan
+- Srishti Rathi

@@ -37,8 +37,8 @@ Red Flags:
 - The on-call lead is currently unavailable.
 - Immediate coordination is required.
 Actions Taken:
-- Accepted the production-risk scenario.
-- Switched to fallback mode to keep the system responsive.
+- Classified the situation as production-impacting and high urgency.
+- Returned a safe fallback briefing while the full agent path was unavailable.
 Recommendations:
 - Create an emergency engineering huddle immediately.
 - Assign one owner for triage and one for stakeholder communication.
@@ -54,24 +54,25 @@ Red Flags:
 - Team availability is reduced.
 - Delay risk is elevated if ownership is unclear.
 Actions Taken:
-- Accepted the critical-risk scenario.
-- Switched to fallback mode to avoid UI delay.
+- Classified the situation as a delivery-risk event.
+- Returned a safe fallback briefing while the full agent path was unavailable.
 Recommendations:
 - Reconfirm the task owner immediately.
 - Schedule an emergency huddle.
 - Reassign the task to the most relevant available developer if needed.
 """
 
-    return f"""EXECUTIVE SUMMARY
+    return """EXECUTIVE SUMMARY
 =================
 Status: YELLOW
 Red Flags:
 - The full AI reasoning path could not complete in time.
 Actions Taken:
-- Accepted the user goal: {goal}
-- Switched to fallback mode to keep the system responsive.
+- Preserved the request and returned a safe operational fallback.
+- Kept the service responsive while the model path was unavailable.
 Recommendations:
-- Retry the request when model quota or latency improves.
+- Re-run the analysis after model quota, credentials, or latency recovers.
+- Assign a human owner to review active blockers while automation is degraded.
 """
 
 
