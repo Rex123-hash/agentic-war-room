@@ -4,5 +4,5 @@ __pycache__/
 credentials.json 
 *.pyc 
 token.json
-database/warroom.db
+database/stratify.db
 

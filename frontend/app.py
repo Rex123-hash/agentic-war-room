@@ -22,13 +22,13 @@ from database.data_store import (
     get_action_logs,
 )
 
-BACKEND_URL = os.getenv("WAR_ROOM_BACKEND_URL", "http://127.0.0.1:8080").rstrip("/")
+BACKEND_URL = os.getenv("STRATIFY_BACKEND_URL", "http://127.0.0.1:8080").rstrip("/")
 API_URL = f"{BACKEND_URL}/analyze"
 DAILY_URL = f"{BACKEND_URL}/analyze-daily"
 MCP_URL = f"{BACKEND_URL}/analyze-mcp"
-API_KEY = os.getenv("WAR_ROOM_API_KEY", "")
-UI_ACCESS_KEY = os.getenv("WAR_ROOM_UI_ACCESS_KEY") or API_KEY
-DISABLE_UI_AUTH = os.getenv("WAR_ROOM_DISABLE_UI_AUTH", "false").lower() == "true"
+API_KEY = os.getenv("STRATIFY_API_KEY", "")
+UI_ACCESS_KEY = os.getenv("STRATIFY_UI_ACCESS_KEY") or API_KEY
+DISABLE_UI_AUTH = os.getenv("STRATIFY_DISABLE_UI_AUTH", "false").lower() == "true"
 DEFAULT_PROMPT = "A critical issue is open, delivery is at risk today, and we need an action plan."
 
 setup_database()
@@ -149,7 +149,7 @@ def get_api_headers():
         return {}
 
     if not API_KEY:
-        raise RuntimeError("WAR_ROOM_API_KEY is not configured for the frontend")
+        raise RuntimeError("STRATIFY_API_KEY is not configured for the frontend")
 
     return {"X-API-Key": API_KEY}
 
@@ -178,13 +178,13 @@ def require_ui_access():
         return
 
     if not UI_ACCESS_KEY:
-        st.error("WAR_ROOM_UI_ACCESS_KEY or WAR_ROOM_API_KEY must be configured before the dashboard can be used.")
+        st.error("STRATIFY_UI_ACCESS_KEY or STRATIFY_API_KEY must be configured before the dashboard can be used.")
         st.stop()
 
     if st.session_state.get("ui_authenticated"):
         return
 
-    st.title("Project War-Room Access")
+    st.title("Stratify Access")
     st.caption("Enter the dashboard access key to continue.")
 
     with st.form("ui_access_form"):
@@ -302,7 +302,7 @@ def render_app_header():
             <div class="brand-lockup">
                 <div class="brand-icon">{ui_icon("shield")}</div>
                 <div>
-                    <div class="brand-title">Project <span>War-Room</span></div>
+                    <div class="brand-title">Stratify</div>
                     <div class="brand-subtitle">
                         Multi-agent workspace for project monitoring, risk analysis, and operational response.
                     </div>
@@ -987,7 +987,7 @@ def show_structured_result(summary: str, mode_label: str):
     )
 
 
-st.set_page_config(page_title="Project War-Room", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="Stratify", page_icon="🛡️", layout="wide")
 
 if "theme" not in st.session_state:
     st.session_state.theme = "Dark"
@@ -1040,10 +1040,10 @@ if page == "Home":
     st.markdown(
         """
         <div class="hero-section" style="padding:34px 32px;">
-            <div class="hero-title" style="font-size:28px;">Welcome to Project War-Room</div>
+            <div class="hero-title" style="font-size:28px;">Welcome to Stratify</div>
             <div class="hero-copy" style="max-width:900px;">
                 Built for project leads who need clarity without digging through scattered
-                updates. Project War-Room brings tasks, team capacity, and recent actions into
+                updates. Stratify brings tasks, team capacity, and recent actions into
                 one focused workspace, so you can understand what is moving, what is blocked,
                 and where your attention is needed next.
             </div>

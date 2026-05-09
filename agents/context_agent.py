@@ -14,7 +14,7 @@ load_dotenv()
 
 from database.agent_logger import log_agent_event
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "database", "warroom.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "database", "stratify.db")
 GEMINI_MODEL = "gemini-2.5-flash"
 
 

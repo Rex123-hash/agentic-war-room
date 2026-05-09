@@ -14,7 +14,7 @@ from mcp import StdioServerParameters
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MCP_SERVER_PATH = os.path.join(BASE_DIR, "mcp_servers", "warroom_mcp_server.py")
+MCP_SERVER_PATH = os.path.join(BASE_DIR, "mcp_servers", "stratify_mcp_server.py")
 GEMINI_MODEL = "gemini-2.5-flash"
 
 
@@ -38,7 +38,7 @@ async def run_mcp_ops_agent(query: str) -> str:
         name="MCPOpsAgent",
         model=GEMINI_MODEL,
         instruction="""
-You are an MCP-powered operations agent for Project War-Room.
+You are an MCP-powered operations agent for Stratify.
 
 Use MCP tools to:
 - inspect open tasks
@@ -54,12 +54,12 @@ Be concise and operational.
     session_service = InMemorySessionService()
     runner = Runner(
         agent=agent,
-        app_name="warroom-mcp-client",
+        app_name="stratify-mcp-client",
         session_service=session_service,
     )
 
     session = await session_service.create_session(
-        app_name="warroom-mcp-client",
+        app_name="stratify-mcp-client",
         user_id="user_001",
     )
 

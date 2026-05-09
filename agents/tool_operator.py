@@ -18,7 +18,7 @@ load_dotenv()
 from tools.calendar_tool import create_calendar_event
 from database.agent_logger import log_agent_event
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "database", "warroom.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "database", "stratify.db")
 GEMINI_MODEL = "gemini-2.5-flash"
 DEFAULT_HUDDLE_EMAIL = os.getenv("DEFAULT_HUDDLE_EMAIL", "amaank2405@gmail.com")
 
@@ -130,10 +130,10 @@ async def run_tool_operator(instructions: str) -> dict:
     if _needs_huddle(instructions):
         try:
             result = create_real_calendar_huddle(
-                title="Project War-Room Emergency Huddle",
+                title="Stratify Emergency Huddle",
                 attendees=DEFAULT_HUDDLE_EMAIL,
                 duration_minutes=15,
-                description="Auto-created by Project War-Room during critical project risk handling.",
+                description="Auto-created by Stratify during critical project risk handling.",
             )
             preflight_notes.append(f"Calendar preflight result: {result}")
         except Exception as exc:
@@ -154,8 +154,8 @@ async def run_tool_operator(instructions: str) -> dict:
     )
 
     session_service = InMemorySessionService()
-    runner = Runner(agent=agent, app_name="agentic-war-room", session_service=session_service)
-    session = await session_service.create_session(app_name="agentic-war-room", user_id="user_001")
+    runner = Runner(agent=agent, app_name="agentic-stratify", session_service=session_service)
+    session = await session_service.create_session(app_name="agentic-stratify", user_id="user_001")
 
     full_instructions = instructions
     if preflight_notes:

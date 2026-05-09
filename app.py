@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 st.set_page_config(
-    page_title="Project War-Room",
+    page_title="Stratify",
     page_icon="🚨",
     layout="wide"
 )
@@ -33,7 +33,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header">🚨 Agentic Project War-Room</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🚨 Stratify</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Your AI-powered Project Manager — just describe your problem, AI handles the rest</div>', unsafe_allow_html=True)
 
 st.markdown("---")
@@ -85,7 +85,7 @@ goal = st.text_area(
 # --- How it works section ---
 with st.expander("🤖 How does this work?"):
     st.markdown("""
-    When you click *Activate War-Room*, our AI system does this automatically:
+    When you click *Activate Stratify*, our AI system does this automatically:
     
     1. *Commander Agent* receives your situation and breaks it into tasks
     2. *Data Miner Agent* checks all current tasks, deadlines, and team availability  
@@ -98,7 +98,7 @@ with st.expander("🤖 How does this work?"):
 
 # --- Activate button ---
 st.markdown("")
-activate = st.button("🚀 Activate War-Room", type="primary", use_container_width=True)
+activate = st.button("🚀 Activate Stratify", type="primary", use_container_width=True)
 
 if activate:
     if not goal.strip():
@@ -133,7 +133,7 @@ if activate:
             status_text.markdown("Data Miner fetching tasks and team info...")
 
             response = requests.post(
-                "https://war-room-af7evfwqwq-uc.a.run.app/analyze",
+                "https://stratify-af7evfwqwq-uc.a.run.app/analyze",
                 json={"goal": goal},
                 timeout=180
             )

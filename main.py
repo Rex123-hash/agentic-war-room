@@ -10,7 +10,7 @@ from database.db_setup import setup_database
 setup_database()
 
 app = FastAPI(
-    title="Agentic Project War-Room",
+    title="Stratify",
     version="1.0.0",
     description="Local MVP for multi-agent project operations",
 )
@@ -149,10 +149,10 @@ def run_calendar_preflight(goal: str) -> dict | None:
         return None
 
     return create_real_calendar_huddle(
-        title="Project War-Room Emergency Huddle",
+        title="Stratify Emergency Huddle",
         attendees=DEFAULT_HUDDLE_EMAIL,
         duration_minutes=15,
-        description=f"Auto-created by Project War-Room for: {goal[:500]}",
+        description=f"Auto-created by Stratify for: {goal[:500]}",
     )
 
 
@@ -161,7 +161,7 @@ async def safe_run(goal: str, session_id: str) -> SummaryResponse:
         return SummaryResponse(
         status="success",
         summary=(
-            "Hi! I’m Project War-Room, your project operations assistant. "
+            "Hi! I’m Stratify, your project operations assistant. "
             "Tell me about a project issue like a blocked task, critical bug, "
             "team availability problem, sprint delay, or production incident, "
             "and I’ll help analyze it."
@@ -232,7 +232,7 @@ async def safe_run_mcp(goal: str, session_id: str) -> SummaryResponse:
 @app.get("/")
 def root():
     return {
-        "system": "Agentic Project War-Room",
+        "system": "Stratify",
         "status": "running",
         "agents": [
             "CommanderAgent",

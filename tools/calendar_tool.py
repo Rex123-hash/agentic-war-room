@@ -133,9 +133,9 @@ def create_calendar_event(
 
 if __name__ == "__main__":
     result = create_calendar_event(
-        title="War-Room Test Event",
+        title="Stratify Test Event",
         attendees="amaank2405@gmail.com, invalid person, Bob Johnson",
         duration_minutes=15,
-        description="Testing Project War-Room calendar integration",
+        description="Testing Stratify calendar integration",
     )
     print(result)

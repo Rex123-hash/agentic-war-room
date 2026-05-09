@@ -4,7 +4,7 @@ from datetime import datetime, UTC
 
 from database.firestore_db import is_firestore_enabled, upsert_document
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "warroom.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "stratify.db")
 
 
 def get_connection():
@@ -84,7 +84,7 @@ def setup_firestore_collections():
 
     bootstrap_docs = {
         "system_meta": {
-            "app": "Project War-Room",
+            "app": "Stratify",
             "status": "initialized",
             "initialized_at": now,
         }

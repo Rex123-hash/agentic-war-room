@@ -9,4 +9,4 @@ credentials.json
 .gitignore
 .venv/
 venv/
-database/warroom.db
+database/stratify.db

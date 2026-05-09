@@ -1,14 +1,14 @@
-# Project War-Room
+# Stratify
 
-Project War-Room is a cloud-deployed multi-agent operations dashboard for project risk, delivery blockers, team availability, action logging, and AI-assisted incident response.
+Stratify is a cloud-deployed multi-agent operations dashboard for project risk, delivery blockers, team availability, action logging, and AI-assisted incident response.
 
 The app combines a polished dark dashboard UI with a FastAPI backend, Google ADK agents, Gemini reasoning, SQLite-backed local project data, optional Firestore support, and Cloud Run deployment.
 
 ## Live Deployment
 
-- Frontend: https://war-room-frontend-bdtynmiyrq-el.a.run.app
-- Backend: https://war-room-backend-bdtynmiyrq-el.a.run.app
-- Health check: https://war-room-backend-bdtynmiyrq-el.a.run.app/health
+- Frontend: https://stratify-frontend-bdtynmiyrq-el.a.run.app
+- Backend: https://stratify-backend-bdtynmiyrq-el.a.run.app
+- Health check: https://stratify-backend-bdtynmiyrq-el.a.run.app/health
 
 ## Core Features
 
@@ -29,7 +29,7 @@ The app combines a polished dark dashboard UI with a FastAPI backend, Google ADK
 
 ## Agent Architecture
 
-Project War-Room uses Google ADK with a router-worker pattern:
+Stratify uses Google ADK with a router-worker pattern:
 
 - Commander Agent: reads the user situation, routes work, and produces the final operational briefing
 - Data Miner Agent: checks project task state, priorities, deadlines, team availability, and action data
@@ -74,9 +74,9 @@ By default, the frontend expects the backend at `http://127.0.0.1:8080`.
 
 Useful variables:
 
-- `WAR_ROOM_BACKEND_URL`: backend URL used by the frontend
-- `WAR_ROOM_API_KEY`: shared frontend-to-backend app key when enabled
-- `WAR_ROOM_DISABLE_UI_AUTH`: set to `true` to skip the UI access screen
+- `STRATIFY_BACKEND_URL`: backend URL used by the frontend
+- `STRATIFY_API_KEY`: shared frontend-to-backend app key when enabled
+- `STRATIFY_DISABLE_UI_AUTH`: set to `true` to skip the UI access screen
 - `GOOGLE_CLOUD_PROJECT`: Google Cloud project for Vertex AI
 - `GOOGLE_CLOUD_LOCATION`: Vertex AI location, for example `us-central1`
 - `GOOGLE_GENAI_USE_VERTEXAI`: set to `true` for Vertex AI mode
@@ -88,14 +88,14 @@ Useful variables:
 
 The project is deployed as two services:
 
-- `war-room-backend`: FastAPI API and ADK agent orchestration
-- `war-room-frontend`: Streamlit dashboard UI
+- `stratify-backend`: FastAPI API and ADK agent orchestration
+- `stratify-frontend`: Streamlit dashboard UI
 
 Images are stored in Artifact Registry:
 
 ```text
-asia-south1-docker.pkg.dev/project-track-1-491917/war-room/war-room-backend:latest
-asia-south1-docker.pkg.dev/project-track-1-491917/war-room/war-room-frontend:latest
+asia-south1-docker.pkg.dev/project-track-1-491917/stratify/stratify-backend:latest
+asia-south1-docker.pkg.dev/project-track-1-491917/stratify/stratify-frontend:latest
 ```
 
 ## Streamlit Note

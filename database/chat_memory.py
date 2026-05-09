@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "warroom.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "stratify.db")
 
 
 def save_message(session_id: str, role: str, message: str) -> None:

@@ -42,7 +42,7 @@ async def call_tool_operator(instructions: str) -> dict:
 
 
 COMMANDER_PROMPT = """
-You are the Commander Agent of Project War-Room.
+You are the Commander Agent of Stratify.
 You orchestrate three sub-agents:
 - call_data_miner
 - call_context_agent
@@ -112,12 +112,12 @@ async def run_commander(goal: str) -> str:
     session_service = InMemorySessionService()
     runner = Runner(
         agent=agent,
-        app_name="agentic-war-room",
+        app_name="agentic-stratify",
         session_service=session_service,
     )
 
     session = await session_service.create_session(
-        app_name="agentic-war-room",
+        app_name="agentic-stratify",
         user_id="user_001",
     )
 

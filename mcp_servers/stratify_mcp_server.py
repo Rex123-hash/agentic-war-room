@@ -12,11 +12,11 @@ import mcp.server.stdio
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(BASE_DIR, "database", "warroom.db")
+DB_PATH = os.path.join(BASE_DIR, "database", "stratify.db")
 
 from tools.calendar_tool import create_calendar_event
 
-app = Server("warroom-mcp-server")
+app = Server("stratify-mcp-server")
 
 
 def _connect():
@@ -75,7 +75,7 @@ async def list_mcp_tools() -> list[mcp_types.Tool]:
     return [
         mcp_types.Tool(
             name="get_open_tasks",
-            description="Get open and in-progress project tasks from the War-Room database.",
+            description="Get open and in-progress project tasks from the Stratify database.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -85,7 +85,7 @@ async def list_mcp_tools() -> list[mcp_types.Tool]:
         ),
         mcp_types.Tool(
             name="get_team_availability",
-            description="Get current team availability and roles from the War-Room database.",
+            description="Get current team availability and roles from the Stratify database.",
             inputSchema={
                 "type": "object",
                 "properties": {}
