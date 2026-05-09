@@ -12,7 +12,7 @@ export default function MetricCard({ Icon, label, value, sub, color }: Props) {
   return (
     <div
       style={{
-        background: 'rgba(0,0,0,0.40)', border: '1px solid rgba(255,255,255,0.10)',
+        background: 'rgba(0,0,0,0.40)', border: 'none',
         borderRadius: 12, padding: 16, minHeight: 128, display: 'flex', flexDirection: 'column',
         justifyContent: 'space-between', backdropFilter: 'blur(10px)',
         boxShadow: '0 18px 40px rgba(0,0,0,0.18)',
