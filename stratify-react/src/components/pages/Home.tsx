@@ -10,7 +10,7 @@ const shortcuts = [
     title: 'Tasks',
     copy: 'Review active work, priorities, owners, and deadlines.',
     btn: 'Open Tasks',
-    primary: true,
+    primary: false,
   },
   {
     page: 'Team' as NavPage,
