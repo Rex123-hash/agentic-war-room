@@ -1,11 +1,18 @@
 import asyncio
+from typing import Optional
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from agents.commander import run_commander
 from agents.mcp_ops_agent import run_mcp_ops_agent
 from agents.tool_operator import create_real_calendar_huddle, DEFAULT_HUDDLE_EMAIL
 from database.chat_memory import save_message, get_recent_messages
 from database.db_setup import setup_database
+from database.data_store import (
+    get_all_tasks, add_task, update_task, delete_task,
+    get_all_team_members, add_team_member, update_team_member_availability, delete_team_member,
+    get_action_logs,
+)
 
 setup_database()
 
@@ -13,6 +20,14 @@ app = FastAPI(
     title="Stratify",
     version="1.0.0",
     description="Local MVP for multi-agent project operations",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -273,6 +288,97 @@ async def analyze_mcp(request: GoalRequest):
     if not request.goal.strip():
         raise HTTPException(status_code=400, detail="Goal cannot be empty")
     return await safe_run_mcp(request.goal, request.session_id)
+
+
+# ── CRUD: Tasks ──────────────────────────────────────────────────────────────
+
+class TaskCreate(BaseModel):
+    title: str
+    assignee: str = ""
+    status: str = "Open"
+    priority: str = "Medium"
+    deadline: str = ""
+    description: str = ""
+
+class TaskUpdate(BaseModel):
+    assignee: str
+    status: str
+
+@app.get("/tasks")
+def list_tasks():
+    return get_all_tasks()
+
+@app.post("/tasks", status_code=201)
+def create_task(body: TaskCreate):
+    task_id = add_task(body.title, body.assignee, body.status, body.priority, body.deadline, body.description)
+    return {"id": task_id}
+
+@app.put("/tasks/{task_id}")
+def update_task_endpoint(task_id: str, body: TaskUpdate):
+    update_task(task_id, body.assignee, body.status)
+    return {"ok": True}
+
+@app.delete("/tasks/{task_id}")
+def delete_task_endpoint(task_id: str):
+    delete_task(task_id)
+    return {"ok": True}
+
+
+# ── CRUD: Team ───────────────────────────────────────────────────────────────
+
+class MemberCreate(BaseModel):
+    name: str
+    role: str = ""
+    email: str = ""
+    skills: str = ""
+    available: bool = True
+
+class MemberUpdate(BaseModel):
+    available: bool
+
+@app.get("/team")
+def list_team():
+    return get_all_team_members()
+
+@app.post("/team", status_code=201)
+def create_member(body: MemberCreate):
+    member_id = add_team_member(body.name, body.role, body.email, body.skills, body.available)
+    return {"id": member_id}
+
+@app.put("/team/{member_id}")
+def update_member_endpoint(member_id: str, body: MemberUpdate):
+    update_team_member_availability(member_id, body.available)
+    return {"ok": True}
+
+@app.delete("/team/{member_id}")
+def delete_member_endpoint(member_id: str):
+    delete_team_member(member_id)
+    return {"ok": True}
+
+
+# ── Action Logs & Metrics ────────────────────────────────────────────────────
+
+@app.get("/action-logs")
+def list_action_logs(limit: int = 20):
+    return get_action_logs(limit=limit)
+
+@app.get("/metrics")
+def get_metrics():
+    tasks = get_all_tasks()
+    team = get_all_team_members()
+    actions = get_action_logs(limit=200)
+    total_tasks = len(tasks)
+    open_tasks = len([t for t in tasks if t.get("status") != "Closed"])
+    critical_open = len([t for t in tasks if t.get("priority") == "Critical" and t.get("status") != "Closed"])
+    available_team = len([m for m in team if m.get("available") in [True, 1, "Available"]])
+    logged_actions = len(actions)
+    return {
+        "total_tasks": total_tasks,
+        "open_tasks": open_tasks,
+        "critical_open": critical_open,
+        "available_team": available_team,
+        "logged_actions": logged_actions,
+    }
 
 
 if __name__ == "__main__":
