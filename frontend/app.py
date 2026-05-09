@@ -6,6 +6,18 @@ import csv
 import io
 import requests
 import streamlit as st
+from PIL import Image, ImageDraw
+
+
+def _make_favicon():
+    sz = 64
+    img = Image.new("RGBA", (sz, sz), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    pts = [(8, 6), (56, 6), (56, 34), (32, 58), (8, 34)]
+    d.polygon(pts, fill=(59, 130, 246, 255))
+    d.line([(32, 18), (32, 44)], fill=(255, 255, 255, 220), width=5)
+    d.line([(20, 30), (44, 30)], fill=(255, 255, 255, 220), width=5)
+    return img
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -987,7 +999,7 @@ def show_structured_result(summary: str, mode_label: str):
     )
 
 
-st.set_page_config(page_title="Stratify", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="Stratify", page_icon=_make_favicon(), layout="wide")
 
 if "theme" not in st.session_state:
     st.session_state.theme = "Dark"
