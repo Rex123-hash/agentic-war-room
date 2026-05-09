@@ -101,7 +101,7 @@ body {
 .st-btn-primary {
   background: rgba(0,0,0,0.72); border-color: rgba(255,255,255,0.22); color: #fff;
 }
-.st-btn-primary:hover { background: rgba(0,0,0,0.85); border-color: rgba(255,255,255,0.30); }
+.st-btn-primary:hover { background: rgba(0,0,0,0.72); border-color: rgba(255,255,255,0.22); }
 .st-btn-sm { height: 34px; padding: 0 12px; font-size: 13px; }
 .st-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 

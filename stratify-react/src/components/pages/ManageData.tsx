@@ -140,7 +140,7 @@ export default function ManageData() {
               {field(<>{label('Priority')}<select className="st-select" value={addT.priority} onChange={e => setAddT(p => ({ ...p, priority: e.target.value }))}>{PRIORITIES.map(p => <option key={p}>{p}</option>)}</select></>)}
               {field(<>{label('Deadline')}<input className="st-input" value={addT.deadline} onChange={e => setAddT(p => ({ ...p, deadline: e.target.value }))} placeholder="2026-04-10" /></>)}
               {field(<>{label('Description')}<textarea className="st-textarea" value={addT.description} onChange={e => setAddT(p => ({ ...p, description: e.target.value }))} rows={3} placeholder="Optional" /></>)}
-              <button type="submit" className="st-btn st-btn-primary" style={{ width: '100%' }}>Add Task</button>
+              <button type="submit" className="st-btn" style={{ width: '100%' }}>Add Task</button>
             </form>
           </>)}
 
@@ -151,7 +151,7 @@ export default function ManageData() {
                 {field(<>{label('Select Task')}<select className="st-select" value={updTaskId ?? ''} onChange={e => { const t = tasks.find(t => t.id === Number(e.target.value)); setUpdTaskId(Number(e.target.value)); setUpdAssignee(t?.assignee ?? ''); setUpdStatus(t?.status ?? 'Open') }}>{tasks.map(t => <option key={t.id} value={t.id}>{t.id} - {t.title} ({t.status})</option>)}</select></>)}
                 {field(<>{label('New Assignee')}<input className="st-input" value={updAssignee} onChange={e => setUpdAssignee(e.target.value)} placeholder="Assignee" /></>)}
                 {field(<>{label('New Status')}<select className="st-select" value={updStatus} onChange={e => setUpdStatus(e.target.value)}>{STATUSES.map(s => <option key={s}>{s}</option>)}</select></>)}
-                <button type="submit" className="st-btn st-btn-primary" style={{ width: '100%' }}>Update Task</button>
+                <button type="submit" className="st-btn" style={{ width: '100%' }}>Update Task</button>
               </form>
             )}
           </>)}
@@ -167,7 +167,7 @@ export default function ManageData() {
                     ⚠️ I understand this will be permanently deleted
                   </label>
                 </>)}
-                <button type="submit" className="st-btn" style={{ width: '100%', color: '#FF6A63', borderColor: 'rgba(255,106,99,0.25)' }}>Delete Task</button>
+                <button type="submit" className="st-btn" style={{ width: '100%' }}>Delete Task</button>
               </form>
             )}
           </>)}
@@ -185,7 +185,7 @@ export default function ManageData() {
               {field(<>{label('Email')}<input className="st-input" value={addM.email} onChange={e => setAddM(p => ({ ...p, email: e.target.value }))} placeholder="email@example.com" /></>)}
               {field(<>{label('Skills')}<input className="st-input" value={addM.skills} onChange={e => setAddM(p => ({ ...p, skills: e.target.value }))} placeholder="python,react,debugging" /></>)}
               {field(<>{label('Available')}<select className="st-select" value={addM.available ? 'Yes' : 'No'} onChange={e => setAddM(p => ({ ...p, available: e.target.value === 'Yes' }))}><option>Yes</option><option>No</option></select></>)}
-              <button type="submit" className="st-btn st-btn-primary" style={{ width: '100%' }}>Add Team Member</button>
+              <button type="submit" className="st-btn" style={{ width: '100%' }}>Add Team Member</button>
             </form>
           </>)}
 
@@ -195,7 +195,7 @@ export default function ManageData() {
               <form onSubmit={handleUpdateMember}>
                 {field(<>{label('Select Team Member')}<select className="st-select" value={updMemberId ?? ''} onChange={e => { const m = members.find(m => m.id === Number(e.target.value)); setUpdMemberId(Number(e.target.value)); setUpdAvail(m?.available === true || m?.available === 1 ? 'Available' : 'Unavailable') }}>{members.map(m => <option key={m.id} value={m.id}>{m.id} - {m.name}</option>)}</select></>)}
                 {field(<>{label('Availability')}<select className="st-select" value={updAvail} onChange={e => setUpdAvail(e.target.value)}><option>Available</option><option>Unavailable</option></select></>)}
-                <button type="submit" className="st-btn st-btn-primary" style={{ width: '100%' }}>Update Availability</button>
+                <button type="submit" className="st-btn" style={{ width: '100%' }}>Update Availability</button>
               </form>
             )}
           </>)}
@@ -211,7 +211,7 @@ export default function ManageData() {
                     ⚠️ I understand this will be permanently deleted
                   </label>
                 </>)}
-                <button type="submit" className="st-btn" style={{ width: '100%', color: '#FF6A63', borderColor: 'rgba(255,106,99,0.25)' }}>Delete Team Member</button>
+                <button type="submit" className="st-btn" style={{ width: '100%' }}>Delete Team Member</button>
               </form>
             )}
           </>)}

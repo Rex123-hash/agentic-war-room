@@ -84,7 +84,7 @@ export default function Home() {
               <div style={{ fontSize: 14, fontWeight: 700, color, marginBottom: 10 }}>{title}</div>
               <div style={{ fontSize: 16, color: '#A1A1AA', lineHeight: 1.75 }}>{copy}</div>
             </div>
-            <button className="st-btn st-btn-primary" style={{ width: '100%' }} onClick={() => setPage(page)}>
+            <button className={`st-btn${primary ? ' st-btn-primary' : ''}`} style={{ width: '100%' }} onClick={() => setPage(page)}>
               {btn}
             </button>
           </div>

@@ -17,11 +17,12 @@ export default function TopNav() {
               onClick={() => setPage(label)}
               style={{
                 width: '100%', height: 42, borderRadius: 8, fontFamily: 'inherit',
-                border: active ? '1px solid rgba(255,255,255,0.22)' : '1px solid rgba(255,255,255,0.10)',
-                background: active ? 'rgba(0,0,0,0.72)' : 'rgba(255,255,255,0.05)',
+                border: active ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(255,255,255,0.10)',
+                background: active ? 'rgba(0,0,0,0.60)' : 'rgba(255,255,255,0.05)',
                 color: active ? '#fff' : '#9CA3AF',
                 fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-                boxShadow: 'none', outline: 'none', padding: '0 16px',
+                boxShadow: active ? 'inset 0 -2px 0 rgba(255,255,255,0.86), 0 10px 24px rgba(255,255,255,0.08)' : 'none',
+                outline: 'none', padding: '0 16px',
                 transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
               }}
               onMouseEnter={e => {
