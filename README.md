@@ -109,38 +109,38 @@ The React frontend will automatically connect to the backend at `http://localhos
 Stratify uses **Google ADK (Agent Development Kit)** with a **router-worker multi-agent pattern**:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│               User Input (Situation)                │
-└────────────────────┬────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│            User Input (Situation)                    │
+└─────────────────────┬────────────────────────────────┘
+                      │
+         ┌────────────▼────────────┐
+         │   COMMANDER AGENT       │
+         │   (Router & Synthesizer)│
+         └────────┬───────┬────────┘
+                  │       │
+      ┌───────────┘       └──────────────┐
+      │                                  │
+  ┌───▼────────┐  ┌────────────┐  ┌─────▼──────────┐
+  │ DATA       │  │ CONTEXT    │  │ TOOL OPERATOR  │
+  │ MINER      │  │ AGENT      │  │ (Executor)     │
+  │            │  │            │  │                │
+  │ • Tasks    │  │ • SOPs     │  │ • Calendar     │
+  │ • Dates    │  │ • Notes    │  │ • Reassign     │
+  │ • Team     │  │ • Prior    │  │ • Log Action   │
+  │ • Status   │  │   Calls    │  │                │
+  └───┬────────┘  └──┬─────────┘  └────┬───────────┘
+      │              │                 │
+      └──────────────┬─────────────────┘
                      │
-        ┌────────────▼────────────┐
-        │   COMMANDER AGENT       │
-        │   (Router & Synthesizer)│
-        └────────┬───┬───┬────────┘
-                 │   │   │
-         ┌───────┘   │   └────────┐
-         │           │            │
-    ┌────▼────┐  ┌───▼────┐  ┌────▼──────────┐
-    │DATA     │  │CONTEXT │  │TOOL OPERATOR  │
-    │MINER    │  │AGENT   │  │(Executor)     │
-    │         │  │        │  │               │
-    │• Tasks  │  │• SOPs  │  │• Calendar    │
-    │• Dates  │  │• Notes │  │• Reassign    │
-    │• Team   │  │• Prior │  │• Log Action  │
-    │• Status │  │  Calls │  │              │
-    └────┬────┘  └───┬────┘  └────┬──────────┘
-         │           │            │
-         └───────────┬────────────┘
+         ┌───────────▼───────────────┐
+         │   MCP OPS AGENT           │
+         │  (Infrastructure Checks)  │
+         └───────────┬───────────────┘
                      │
-        ┌────────────▼────────────────┐
-        │  MCP OPS AGENT              │
-        │ (Infrastructure Checks)     │
-        └─────────────────────────────┘
-                     │
-         ┌───────────▼───────────┐
-         │  EXECUTIVE BRIEFING   │
-         │  (Structured Output)  │
-         └───────────────────────┘
+         ┌───────────▼──────────────┐
+         │  EXECUTIVE BRIEFING      │
+         │  (Structured Output)     │
+         └──────────────────────────┘
 ```
 
 ### Agent Roles
