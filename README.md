@@ -26,7 +26,6 @@
 - [☁️ Cloud Deployment](#-cloud-deployment)
 - [🔌 API Reference](#-api-reference)
 - [📚 Documentation](#-documentation)
-- [🤝 Contributing](#-contributing)
 - [🐛 Troubleshooting](#-troubleshooting)
 - [👥 Team](#-team)
 - [📄 License](#-license)
@@ -495,25 +494,6 @@ Content-Type: application/json
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-**Quick start:**
-1. Fork & clone the repo
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make changes & commit with conventional commits
-4. Push & create a pull request
-
-**We look for:**
-- Clean, well-tested code
-- Documentation updates
-- Conventional commit messages
-- No breaking changes
-
-For questions or ideas, open an issue or discussion. Thanks for contributing! 🚀
-
----
 
 ## 🐛 Troubleshooting
 
