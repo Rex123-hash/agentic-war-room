@@ -4,20 +4,45 @@
 
 **AI-powered project operations — describe the situation, the agents handle the rest.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Frontend-blue?style=for-the-badge)](https://stratify-frontend-868361801548.asia-south1.run.app)
-[![Backend](https://img.shields.io/badge/API-Backend-green?style=for-the-badge)](https://stratify-backend-868361801548.asia-south1.run.app/health)
-[![Built with Google ADK](https://img.shields.io/badge/Google%20ADK-Multi--Agent-orange?style=for-the-badge)](https://cloud.google.com/vertex-ai)
-[![Gemini](https://img.shields.io/badge/Model-Gemini%202.5%20Flash-purple?style=for-the-badge)](https://deepmind.google/technologies/gemini/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Frontend-blue?style=for-the-badge&logo=streamlit)](https://stratify-frontend-868361801548.asia-south1.run.app)
+[![API Backend](https://img.shields.io/badge/API-Backend-green?style=for-the-badge&logo=fastapi)](https://stratify-backend-868361801548.asia-south1.run.app/health)
+[![Built with Google ADK](https://img.shields.io/badge/Google%20ADK-Multi--Agent-orange?style=for-the-badge&logo=google-cloud)](https://cloud.google.com/vertex-ai)
+[![Gemini 2.5 Flash](https://img.shields.io/badge/Model-Gemini%202.5%20Flash-purple?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemini/)
 
 </div>
 
 ---
 
+## 📋 Table of Contents
+
+- [What is Stratify?](#what-is-stratify)
+- [✨ Features](#-features)
+- [🚀 Quick Start](#-quick-start)
+- [🏗️ Architecture](#-architecture)
+- [📁 Project Structure](#-project-structure)
+- [🛠️ Tech Stack](#-tech-stack)
+- [⚙️ Configuration](#-configuration)
+- [🔧 Development Setup](#-development-setup)
+- [☁️ Cloud Deployment](#-cloud-deployment)
+- [🔌 API Reference](#-api-reference)
+- [📚 Documentation](#-documentation)
+- [🤝 Contributing](#-contributing)
+- [🐛 Troubleshooting](#-troubleshooting)
+- [👥 Team](#-team)
+- [📄 License](#-license)
+
+---
+
 ## What is Stratify?
 
-Stratify is a cloud-deployed multi-agent operations dashboard. You describe a real project situation in plain English — a blocked task, a sick developer, a production incident — and a team of AI agents analyzes your live project data, applies SOPs, takes real actions (Calendar huddles, task reassignments, action logs), and delivers a structured executive briefing.
+Stratify is a **cloud-native multi-agent operations dashboard** that transforms how teams handle project emergencies. Instead of filling out forms or navigating complex UIs, you simply **describe what's happening in plain English** — and a team of AI agents gets to work.
 
-No forms. No ticket filing. Just describe what's happening.
+### Example Use Cases:
+- 📌 **Blocked Task**: "Senior dev is sick, we're 3 days from launch, task X is blocked" → agents reassign work, create a huddle, post action items
+- 🚨 **Production Incident**: "Payment processing down, affecting 10% of orders" → agents pull live metrics, suggest rollback, log decisions
+- 📅 **Capacity Crisis**: "We're short staffed for the Q2 push" → agents analyze availability, recommend team rebalancing
+
+**Zero friction. Real actions. Structured briefing.**
 
 ---
 
@@ -25,142 +50,554 @@ No forms. No ticket filing. Just describe what's happening.
 
 | Feature | Description |
 |---|---|
-| 🤖 **Multi-Agent Analysis** | Commander routes work across Data Miner, Context, and Tool Operator agents |
-| 📊 **Live Dashboard** | Dark executive UI with task metrics, team capacity, and action log |
-| 📅 **Real Calendar Huddles** | Auto-creates Google Calendar emergency meetings on critical risk |
-| 🗂️ **Task & Team Management** | Add, update, filter, and export tasks and team members |
-| 🔁 **Daily Health Check** | Autonomous proactive project health scan |
-| 🔌 **MCP Operations Mode** | Protocol-oriented ops checks via Model Context Protocol |
-| 📋 **Action Log** | Full audit trail of every agent action taken |
-| 🔐 **Auth-gated UI** | Optional access key protection for the dashboard |
+| 🤖 **Multi-Agent Analysis** | Commander routes analysis across specialized agents (Data Miner, Context, Tool Operator) |
+| 📊 **Executive Dashboard** | Dark-themed, real-time metrics: tasks, team capacity, health status, action log |
+| 📅 **Auto Calendar Huddles** | Instantly creates Google Calendar emergency meetings on critical project risk |
+| 🗂️ **Task & Team Ops** | Full lifecycle: add, update, filter, reassign, export tasks and team members |
+| 🔄 **Autonomous Health Checks** | Daily proactive scans for project risks without human intervention |
+| 🔌 **MCP Operations Mode** | Protocol-oriented infrastructure checks via Model Context Protocol |
+| 📋 **Complete Audit Trail** | Immutable action log of every agent decision, with timestamps and reasoning |
+| 🔐 **Optional Auth** | Access key protection for dashboard (configurable per deployment) |
+| 🌐 **Live API** | RESTful backend for programmatic access to all operations |
 
 ---
 
-## 🧠 Agent Architecture
+## 🚀 Quick Start
 
-Stratify uses **Google ADK** with a router-worker pattern:
+### Prerequisites
+- Python 3.9+
+- GCP project with Vertex AI enabled
+- Google Cloud credentials
+
+### Installation (5 minutes)
+
+```bash
+# Clone the repository
+git clone https://github.com/amaank2405/agentic-war-room.git
+cd agentic-war-room
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create .env file (copy template from .env)
+cp .env .env.local
+# Edit .env.local with your GCP credentials and project details
+```
+
+### Run Locally
+
+**Terminal 1 — Backend (FastAPI + Agents)**
+```bash
+python main.py
+# Server starts at http://localhost:8080
+```
+
+**Terminal 2 — Frontend (Streamlit Dashboard)**
+```bash
+streamlit run frontend/app.py
+# Dashboard opens at http://localhost:8501
+```
+
+The frontend will automatically connect to the backend. You'll see the access screen (if auth is enabled), then the main dashboard.
+
+---
+
+## 🏗️ Architecture
+
+Stratify uses **Google ADK (Agent Development Kit)** with a **router-worker multi-agent pattern**:
 
 ```
-          User Situation
-                │
-                ▼
-     ┌──────────────────────┐
-     │    Commander Agent   │
-     └──────────┬───────────┘
-                │
-     ┌──────────┼──────────┐
-     ▼          ▼          ▼
-┌──────────┐ ┌──────────┐ ┌──────────────┐
-│Data Miner│ │ Context  │ │Tool Operator │
-│          │ │  Agent   │ │              │
-│ tasks ·  │ │SOPs ·    │ │ Calendar ·   │
-│ deadlines│ │notes ·   │ │ reassign ·   │
-│ team     │ │decisions │ │ action log   │
-└──────────┘ └──────────┘ └──────────────┘
+┌─────────────────────────────────────────────────────┐
+│               User Input (Situation)                │
+└────────────────────┬────────────────────────────────┘
+                     │
+        ┌────────────▼────────────┐
+        │   COMMANDER AGENT       │
+        │   (Router & Synthesizer)│
+        └────────┬───┬───┬────────┘
+                 │   │   │
+         ┌───────┘   │   └────────┐
+         │           │            │
+    ┌────▼────┐  ┌───▼────┐  ┌────▼──────────┐
+    │DATA     │  │CONTEXT │  │TOOL OPERATOR  │
+    │MINER    │  │AGENT   │  │(Executor)     │
+    │         │  │        │  │               │
+    │• Tasks  │  │• SOPs  │  │• Calendar    │
+    │• Dates  │  │• Notes │  │• Reassign    │
+    │• Team   │  │• Prior │  │• Log Action  │
+    │• Status │  │  Calls │  │              │
+    └────┬────┘  └───┬────┘  └────┬──────────┘
+         │           │            │
+         └───────────┬────────────┘
+                     │
+        ┌────────────▼────────────────┐
+        │  MCP OPS AGENT              │
+        │ (Infrastructure Checks)     │
+        └─────────────────────────────┘
+                     │
+         ┌───────────▼───────────┐
+         │  EXECUTIVE BRIEFING   │
+         │  (Structured Output)  │
+         └───────────────────────┘
 ```
 
-- **Commander** — reads the situation, delegates, synthesizes the final briefing
-- **Data Miner** — queries live tasks, priorities, deadlines, team availability
-- **Context Agent** — searches SOPs, meeting notes, prior decisions
-- **Tool Operator** — takes real actions: Calendar huddles, task updates, logging
-- **MCP Ops Agent** — MCP-protocol operational checks
+### Agent Roles
+
+| Agent | Purpose | Tools |
+|-------|---------|-------|
+| **Commander** | Routes requests, synthesizes final briefing | delegates to others |
+| **Data Miner** | Queries live project state | task API, team DB, calendar |
+| **Context Agent** | Searches organizational knowledge | SOP files, meeting notes, logs |
+| **Tool Operator** | Executes real changes | Calendar API, task updates, logging |
+| **MCP Ops Agent** | Infrastructure health checks | MCP protocol operations |
+
+---
+
+## 📁 Project Structure
+
+```
+agentic-war-room/
+├── agents/                      # Multi-agent orchestration
+│   ├── commander.py            # Router & synthesizer
+│   ├── data_miner.py           # Task/team queries
+│   ├── context_agent.py        # Knowledge search
+│   ├── tool_operator.py        # Action executor
+│   └── mcp_ops_agent.py        # Infrastructure checks
+│
+├── database/                    # Data persistence layer
+│   ├── data_store.py           # Core store abstraction
+│   ├── firestore_db.py         # Firestore backend
+│   ├── alloydb_client.py       # AlloyDB backend
+│   ├── chat_memory.py          # Conversation history
+│   ├── agent_logger.py         # Action audit trail
+│   ├── vector_store.py         # Embeddings for search
+│   └── db_setup.py             # Initialization
+│
+├── frontend/                    # Streamlit UI
+│   └── app.py                  # Dashboard interface
+│
+├── stratify-react/             # React Dashboard (Modern UI)
+│   ├── src/
+│   │   ├── api/                # Backend API client
+│   │   ├── components/         # React components
+│   │   ├── pages/              # Page routes
+│   │   └── App.tsx             # Main app
+│   ├── Dockerfile.frontend     # Container build
+│   └── package.json            # Node dependencies
+│
+├── mcp_servers/                # Model Context Protocol
+│   └── stratify_mcp_server.py  # MCP endpoint
+│
+├── main.py                     # FastAPI server entry point
+├── app.py                      # Legacy Flask app (optional)
+├── requirements.txt            # Python dependencies
+├── .env                        # Environment variables template
+├── Dockerfile                  # Backend container
+├── Dockerfile.frontend         # Frontend container
+└── deploy.sh                   # Cloud Run deployment script
+```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Streamlit |
-| Backend | FastAPI + Uvicorn |
-| AI Orchestration | Google ADK |
-| Model | Gemini 2.5 Flash via Vertex AI |
-| Database | SQLite (default) · Firestore (optional) |
-| Deployment | Google Cloud Run |
-| Build | Google Cloud Build |
-| Registry | Artifact Registry |
+<details open>
+<summary><b>Click to expand/collapse</b></summary>
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | Streamlit + React | Interactive dashboard UI |
+| **Backend** | FastAPI + Uvicorn | High-performance REST API |
+| **AI Orchestration** | Google ADK | Multi-agent coordination |
+| **LLM Model** | Gemini 2.5 Flash | Primary reasoning engine |
+| **Fallback Model** | Gemini 2.5 Flash Lite | Cost-optimized fallback |
+| **Inference** | Vertex AI | GCP managed inference |
+| **Database (Primary)** | Firestore | NoSQL real-time syncing |
+| **Database (Optional)** | SQLite | Local development alternative |
+| **SQL DB (Optional)** | AlloyDB | PostgreSQL-compatible option |
+| **Deployment** | Cloud Run | Serverless container platform |
+| **CI/CD** | Cloud Build | Automated build & deploy |
+| **Registry** | Artifact Registry | Container image storage |
+| **Credentials** | Google Cloud Auth | OAuth 2.0 integration |
+
+</details>
 
 ---
 
-## 🚀 Local Development
+## ⚙️ Configuration
 
-**1. Install dependencies**
+All configuration comes from environment variables. Create a `.env` file in the project root:
+
+```env
+# Google Cloud
+GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+GOOGLE_CLOUD_LOCATION=us-central1
+
+# Vertex AI & Gemini
+GOOGLE_GENAI_USE_VERTEXAI=true
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_FALLBACK_MODEL=gemini-2.5-flash-lite
+GOOGLE_API_KEY=your-api-key
+
+# Stratify App
+STRATIFY_BACKEND_URL=http://localhost:8080
+STRATIFY_API_KEY=your-shared-secret-key
+STRATIFY_DISABLE_UI_AUTH=false
+
+# Database
+USE_FIRESTORE=true
+FIRESTORE_DATABASE_ID=war-room-id
+FIRESTORE_PROJECT_ID=your-gcp-project-id
+
+# Optional: AlloyDB
+ALLOYDB_HOST=your-alloydb-ip
+ALLOYDB_USER=postgres
+ALLOYDB_PASSWORD=your-db-password
+ALLOYDB_DATABASE=warroom_db
+
+# Optional: Slack & GitHub Integration
+SLACK_BOT_TOKEN=xoxb-...
+GITHUB_TOKEN=ghp_...
+
+# Operations
+DEFAULT_HUDDLE_EMAIL=your-email@company.com
+```
+
+<details>
+<summary><b>Configuration Details</b></summary>
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `GOOGLE_CLOUD_PROJECT` | string | - | GCP project ID for Vertex AI |
+| `GOOGLE_CLOUD_LOCATION` | string | us-central1 | Vertex AI region (us-central1, us-west1, etc) |
+| `GOOGLE_GENAI_USE_VERTEXAI` | bool | true | Use Vertex AI (vs local Gemini API) |
+| `GEMINI_MODEL` | string | gemini-2.5-flash | Primary inference model |
+| `GEMINI_FALLBACK_MODEL` | string | gemini-2.5-flash-lite | Fallback for cost optimization |
+| `STRATIFY_BACKEND_URL` | URL | http://localhost:8080 | Backend endpoint for frontend |
+| `STRATIFY_API_KEY` | string | - | Shared secret for frontend→backend auth |
+| `STRATIFY_DISABLE_UI_AUTH` | bool | false | Skip login screen if true |
+| `USE_FIRESTORE` | bool | true | Use Firestore (false = SQLite) |
+| `FIRESTORE_DATABASE_ID` | string | war-room-id | Firestore database name |
+| `DEFAULT_HUDDLE_EMAIL` | email | - | Email for auto-created Calendar meetings |
+
+</details>
+
+---
+
+## 🔧 Development Setup
+
+### 1. Environment Setup
+
 ```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate (Windows)
+venv\Scripts\activate
+
+# Activate (macOS/Linux)
+source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-**2. Set environment variables** (create a `.env` file)
-```env
-GOOGLE_CLOUD_PROJECT=your-project-id
-GOOGLE_CLOUD_LOCATION=us-central1
-GOOGLE_GENAI_USE_VERTEXAI=true
-GEMINI_MODEL=gemini-2.5-flash
+### 2. GCP Authentication
+
+```bash
+# Initialize gcloud
+gcloud init
+
+# Set your project
+gcloud config set project PROJECT_ID
+
+# Authenticate
+gcloud auth application-default login
 ```
 
-**3. Start the backend**
+### 3. Run Backend
+
 ```bash
+# Terminal 1
 python main.py
+
+# Should output:
+# INFO:     Uvicorn running on http://0.0.0.0:8080
+# INFO:     Press CTRL+C to quit
 ```
 
-**4. Start the frontend** (in a separate terminal)
+### 4. Run Frontend
+
 ```bash
+# Terminal 2
 streamlit run frontend/app.py
+
+# Should output:
+# You can now view your Streamlit app in your browser.
+# Local URL: http://localhost:8501
 ```
 
-Frontend will connect to the backend at `http://127.0.0.1:8080` by default.
+### Testing an Analysis
 
----
-
-## ⚙️ Environment Variables
-
-| Variable | Purpose |
-|---|---|
-| `STRATIFY_BACKEND_URL` | Backend URL used by the frontend |
-| `STRATIFY_API_KEY` | Shared app key for frontend→backend auth |
-| `STRATIFY_DISABLE_UI_AUTH` | Set `true` to skip the access screen |
-| `GOOGLE_CLOUD_PROJECT` | GCP project for Vertex AI |
-| `GOOGLE_CLOUD_LOCATION` | Vertex AI region (e.g. `us-central1`) |
-| `GOOGLE_GENAI_USE_VERTEXAI` | Set `true` to use Vertex AI mode |
-| `GEMINI_MODEL` | Primary model (`gemini-2.5-flash`) |
-| `GEMINI_FALLBACK_MODEL` | Fallback model (`gemini-2.5-flash-lite`) |
-| `USE_FIRESTORE` | Set `true` to switch from SQLite to Firestore |
-
----
-
-## ☁️ Cloud Run Deployment
-
-Two services, independently deployable:
-
-```
-stratify-backend   →  FastAPI + ADK agent orchestration
-stratify-frontend  →  Streamlit dashboard UI
-```
-
-**Build and deploy backend:**
 ```bash
-gcloud builds submit --tag asia-south1-docker.pkg.dev/PROJECT_ID/war-room/war-room-backend:latest
-gcloud run deploy stratify-backend --image ... --region asia-south1
+# Terminal 3 (or cURL)
+curl -X POST http://localhost:8080/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"situation": "Lead developer is out sick, launch is in 2 days"}'
 ```
 
-**Build and deploy frontend:**
-```bash
-# uses Dockerfile.frontend
-gcloud run deploy stratify-frontend --image ... --region asia-south1
+Expected response:
+```json
+{
+  "briefing": "...",
+  "actions_taken": [...],
+  "risk_level": "HIGH",
+  "recommendations": [...]
+}
 ```
 
 ---
 
-## 🔌 API Endpoints
+## ☁️ Cloud Deployment
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Health check |
-| `POST` | `/analyze` | Run interactive agent analysis |
-| `POST` | `/analyze-daily` | Trigger autonomous daily health check |
-| `POST` | `/analyze-mcp` | Run MCP ops mode analysis |
+<details open>
+<summary><b>Automated Deployment with deploy.sh</b></summary>
+
+The included `deploy.sh` automates the entire build & deploy pipeline:
+
+```bash
+./deploy.sh
+```
+
+This script:
+1. Reads your GCP project from `.env`
+2. Builds backend container
+3. Deploys backend to Cloud Run
+4. Builds frontend container
+5. Deploys frontend to Cloud Run
+6. Returns live URLs
+
+### Manual Deployment
+
+**Backend:**
+```bash
+gcloud builds submit \
+  --tag asia-south1-docker.pkg.dev/PROJECT_ID/war-room/backend:latest
+
+gcloud run deploy stratify-backend \
+  --image asia-south1-docker.pkg.dev/PROJECT_ID/war-room/backend:latest \
+  --region asia-south1 \
+  --allow-unauthenticated \
+  --set-env-vars "GOOGLE_CLOUD_PROJECT=PROJECT_ID,..."
+```
+
+**Frontend:**
+```bash
+gcloud builds submit --config Dockerfile.frontend \
+  --tag asia-south1-docker.pkg.dev/PROJECT_ID/war-room/frontend:latest
+
+gcloud run deploy stratify-frontend \
+  --image asia-south1-docker.pkg.dev/PROJECT_ID/war-room/frontend:latest \
+  --region asia-south1 \
+  --allow-unauthenticated
+```
+
+</details>
+
+---
+
+## 🔌 API Reference
+
+All endpoints require `STRATIFY_API_KEY` header (if auth is enabled).
+
+### Health Check
+
+```http
+GET /health
+```
+
+Response:
+```json
+{
+  "status": "ok",
+  "version": "1.0.0",
+  "uptime_seconds": 3600
+}
+```
+
+### Interactive Analysis
+
+```http
+POST /analyze
+Content-Type: application/json
+
+{
+  "situation": "Lead backend engineer is out with flu, launch is in 48 hours, API rate limiting task is blocked"
+}
+```
+
+Response:
+```json
+{
+  "briefing": "CRITICAL: Launch at risk due to staffing gap...",
+  "risk_level": "HIGH",
+  "actions_taken": [
+    {
+      "type": "calendar_event",
+      "status": "created",
+      "details": "Emergency huddle scheduled 10am tomorrow"
+    },
+    {
+      "type": "task_reassignment",
+      "task_id": "TASK-123",
+      "old_owner": "john@company.com",
+      "new_owner": "jane@company.com"
+    }
+  ],
+  "recommendations": [
+    "Pause non-critical features",
+    "Reduce test coverage scope"
+  ]
+}
+```
+
+### Daily Health Check
+
+```http
+POST /analyze-daily
+```
+
+Autonomously scans project for risks, runs on schedule.
+
+### MCP Operations
+
+```http
+POST /analyze-mcp
+Content-Type: application/json
+
+{
+  "operation": "system_health_check"
+}
+```
+
+---
+
+## 📚 Documentation
+
+<details>
+<summary><b>Additional Resources</b></summary>
+
+- [Google ADK Documentation](https://cloud.google.com/agents)
+- [Vertex AI API Reference](https://cloud.google.com/vertex-ai/docs)
+- [FastAPI Guide](https://fastapi.tiangolo.com/)
+- [Streamlit Documentation](https://docs.streamlit.io/)
+- [Firestore Guide](https://cloud.google.com/firestore/docs)
+
+</details>
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. **Fork & Clone**
+   ```bash
+   git clone https://github.com/yourusername/agentic-war-room.git
+   cd agentic-war-room
+   ```
+
+2. **Create Feature Branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+3. **Make Changes & Commit**
+   ```bash
+   git add .
+   git commit -m "feat: describe your changes"
+   ```
+
+4. **Push & Create PR**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+### Code Style
+- Follow PEP 8 for Python
+- Use type hints where possible
+- Add docstrings to functions
+
+---
+
+## 🐛 Troubleshooting
+
+<details>
+<summary><b>Common Issues & Solutions</b></summary>
+
+### Frontend Won't Connect to Backend
+```
+Error: "Failed to connect to http://localhost:8080"
+```
+**Solution:**
+- Ensure `main.py` is running in Terminal 1
+- Check `STRATIFY_BACKEND_URL` in `.streamlit/config.toml`
+- Verify firewall isn't blocking port 8080
+
+### Vertex AI Authentication Failed
+```
+Error: "Could not automatically determine credentials"
+```
+**Solution:**
+- Run `gcloud auth application-default login`
+- Ensure `GOOGLE_CLOUD_PROJECT` is set correctly in `.env`
+
+### Firestore Connection Timeout
+```
+Error: "Timeout while connecting to Firestore"
+```
+**Solution:**
+- Verify Firestore is enabled in GCP project
+- Check network connectivity to Cloud
+- Switch to SQLite with `USE_FIRESTORE=false`
+
+### Agent Analysis Hangs
+```
+Analysis taking >5 minutes with no output
+```
+**Solution:**
+- Check backend logs for errors: `tail -f logs.txt`
+- Increase Vertex AI quotas in GCP console
+- Reduce complexity of initial situation description
+
+### Port Already in Use
+```
+Error: "Address already in use: ('0.0.0.0', 8080)"
+```
+**Solution:**
+- Kill existing process: `lsof -i :8080` (macOS/Linux) or `netstat -ano | findstr :8080` (Windows)
+- Change port: `python main.py --port 9000`
+
+</details>
 
 ---
 
 ## 👥 Team
 
-Built by **Amaan Khan** and **Srishti Rathi**
+Built with ❤️ by:
+- **Amaan Khan** — Agent Architecture & Backend
+- **Srishti Rathi** — Frontend & UI/UX
+
+---
+
+## 📄 License
+
+MIT License — see LICENSE file for details.
+
+---
+
+<div align="center">
+
+**[⬆ back to top](#-stratify)**
+
+</div>
