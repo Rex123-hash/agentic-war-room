@@ -41,19 +41,22 @@ No forms. No ticket filing. Just describe what's happening.
 Stratify uses **Google ADK** with a router-worker pattern:
 
 ```
-User Situation
-      │
-      ▼
-┌─────────────────┐
-│  Commander Agent │  ← orchestrates everything, produces final briefing
-└────────┬────────┘
-         │
-   ┌─────┴──────┬──────────────┐
-   ▼            ▼              ▼
-Data Miner   Context Agent   Tool Operator
-(tasks,       (SOPs, notes,   (Calendar,
- deadlines,    prior           task reassign,
- team)         decisions)      action log)
+          User Situation
+                │
+                ▼
+     ┌──────────────────────┐
+     │    Commander Agent   │
+     └──────────┬───────────┘
+                │
+     ┌──────────┼──────────┐
+     ▼          ▼          ▼
+┌──────────┐ ┌──────────┐ ┌──────────────┐
+│Data Miner│ │ Context  │ │Tool Operator │
+│          │ │  Agent   │ │              │
+│ tasks ·  │ │SOPs ·    │ │ Calendar ·   │
+│ deadlines│ │notes ·   │ │ reassign ·   │
+│ team     │ │decisions │ │ action log   │
+└──────────┘ └──────────┘ └──────────────┘
 ```
 
 - **Commander** — reads the situation, delegates, synthesizes the final briefing
