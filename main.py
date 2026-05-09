@@ -194,7 +194,7 @@ async def safe_run(goal: str, session_id: str) -> SummaryResponse:
             )
 
         contextual_goal = build_chat_context(session_id, goal_with_preflight)
-        result = await asyncio.wait_for(run_commander(contextual_goal), timeout=45)
+        result = await asyncio.wait_for(run_commander(contextual_goal), timeout=90)
         if not result:
             result = calendar_status_summary(goal, calendar_preflight) if calendar_preflight else fallback_summary(goal)
         save_message(session_id, "user", goal)
@@ -223,7 +223,7 @@ async def safe_run(goal: str, session_id: str) -> SummaryResponse:
 async def safe_run_mcp(goal: str, session_id: str) -> SummaryResponse:
     try:
         contextual_goal = build_chat_context(session_id, goal)
-        result = await asyncio.wait_for(run_mcp_ops_agent(contextual_goal), timeout=45)
+        result = await asyncio.wait_for(run_mcp_ops_agent(contextual_goal), timeout=90)
         save_message(session_id, "user", goal)
         save_message(session_id, "assistant", result)
         return SummaryResponse(status="success", summary=result)

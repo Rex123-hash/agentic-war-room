@@ -19,7 +19,7 @@ from tools.calendar_tool import create_calendar_event
 from database.agent_logger import log_agent_event
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "database", "stratify.db")
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-2.5-flash-lite"
 DEFAULT_HUDDLE_EMAIL = os.getenv("DEFAULT_HUDDLE_EMAIL", "amaank2405@gmail.com")
 
 
