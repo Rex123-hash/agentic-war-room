@@ -497,34 +497,21 @@ Content-Type: application/json
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-1. **Fork & Clone**
-   ```bash
-   git clone https://github.com/yourusername/agentic-war-room.git
-   cd agentic-war-room
-   ```
+**Quick start:**
+1. Fork & clone the repo
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make changes & commit with conventional commits
+4. Push & create a pull request
 
-2. **Create Feature Branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+**We look for:**
+- Clean, well-tested code
+- Documentation updates
+- Conventional commit messages
+- No breaking changes
 
-3. **Make Changes & Commit**
-   ```bash
-   git add .
-   git commit -m "feat: describe your changes"
-   ```
-
-4. **Push & Create PR**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-### Code Style
-- Follow PEP 8 for Python
-- Use type hints where possible
-- Add docstrings to functions
+For questions or ideas, open an issue or discussion. Thanks for contributing! 🚀
 
 ---
 
@@ -590,7 +577,21 @@ Built with ❤️ by:
 
 ## 📄 License
 
-MIT License — see LICENSE file for details.
+This project is licensed under the **MIT License**.
+
+See [LICENSE](LICENSE) for the full license text.
+
+**In short:** You're free to use, modify, and distribute this software, including in commercial projects. Just include the license and copyright notice.
+
+### Attribution
+
+If you find this project useful, please consider:
+- ⭐ Starring the repository
+- 🔄 Sharing it with others
+- 🐛 Contributing improvements
+- 💬 Providing feedback
+
+---
 
 ---
 
