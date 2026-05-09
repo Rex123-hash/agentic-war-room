@@ -10,3 +10,5 @@ credentials.json
 .venv/
 venv/
 database/stratify.db
+stratify-react/node_modules/
+stratify-react/dist/

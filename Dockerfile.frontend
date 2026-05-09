@@ -1,12 +1,16 @@
-FROM python:3.11-slim
-
+# Build stage
+FROM node:20-alpine AS builder
 WORKDIR /app
+COPY stratify-react/package.json stratify-react/package-lock.json ./
+RUN npm ci
+COPY stratify-react/ .
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+RUN npm run build
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
+# Serve stage
+FROM nginx:1.25-alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 8080
-
-CMD ["streamlit", "run", "frontend/app.py", "--server.port=8080", "--server.address=0.0.0.0"]
+CMD ["nginx", "-g", "daemon off;"]
