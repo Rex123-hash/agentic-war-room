@@ -958,33 +958,11 @@ def show_structured_result(summary: str, mode_label: str):
         unsafe_allow_html=True,
     )
 
-    summary_red = "".join(f"<li>{item}</li>" for item in (parsed["red_flags"] or ["No red flags listed."]))
-    summary_green = "".join(f"<li>{item}</li>" for item in (parsed["actions"] or ["No actions listed."]))
-    summary_blue = "".join(f"<li>{item}</li>" for item in (parsed["recommendations"] or ["No recommendations listed."]))
-
     st.markdown(
-        f"""
-        <div class="summary-shell">
-            <div class="summary-title">Executive Summary</div>
-            <div class="summary-grid">
-                <div>
-                    <div class="summary-status">Status: <strong>{normalized_status or 'YELLOW'}</strong></div>
-                    <div class="summary-col-title summary-red">Red Flags:</div>
-                    <ul>{summary_red}</ul>
-                </div>
-                <div>
-                    <div class="summary-col-title summary-green">Actions Taken:</div>
-                    <ul>{summary_green}</ul>
-                </div>
-                <div>
-                    <div class="summary-col-title summary-blue">Recommendations:</div>
-                    <ul>{summary_blue}</ul>
-                </div>
-            </div>
-        </div>
-        """,
+        '<div class="summary-shell"><div class="summary-title">Executive Summary</div></div>',
         unsafe_allow_html=True,
     )
+    st.markdown(summary, unsafe_allow_html=False)
 
     agent_runs = fetch_agent_runs()
     if agent_runs:
