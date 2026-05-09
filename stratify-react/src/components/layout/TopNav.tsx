@@ -7,7 +7,7 @@ export default function TopNav() {
   const { page, setPage } = useAppStore()
 
   return (
-    <div style={{ background: 'rgba(0,0,0,0.20)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 8, backdropFilter: 'blur(10px)', margin: '8px 0 24px' }}>
+    <div style={{ background: 'rgba(0,0,0,0.20)', borderRadius: 12, padding: 8, backdropFilter: 'blur(10px)', margin: '8px 0 24px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${NAV_LABELS.length}, 1fr)`, gap: 4 }}>
         {NAV_LABELS.map((label) => {
           const active = page === label
