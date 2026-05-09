@@ -15,7 +15,7 @@ export default function MetricsRow() {
   ]
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12, marginBottom: 28 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 8, marginBottom: 24 }}>
       {metrics.map(m => <MetricCard key={m.label} {...m} />)}
     </div>
   )

@@ -10,6 +10,7 @@ const shortcuts = [
     title: 'Tasks',
     copy: 'Review active work, priorities, owners, and deadlines.',
     btn: 'Open Tasks',
+    primary: true,
   },
   {
     page: 'Team' as NavPage,
@@ -18,6 +19,7 @@ const shortcuts = [
     title: 'Team',
     copy: 'Check roles, skills, and who is currently available.',
     btn: 'Open Team',
+    primary: false,
   },
   {
     page: 'Action Log' as NavPage,
@@ -26,6 +28,7 @@ const shortcuts = [
     title: 'Action Log',
     copy: 'Audit recent operations and recorded system actions.',
     btn: 'Open Action Log',
+    primary: false,
   },
 ]
 
@@ -54,7 +57,7 @@ export default function Home() {
 
       {/* Shortcut cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16 }}>
-        {shortcuts.map(({ page, icon: Icon, color, title, copy, btn }) => (
+        {shortcuts.map(({ page, icon: Icon, color, title, copy, btn, primary }) => (
           <div key={page}>
             <div
               style={{
@@ -78,8 +81,8 @@ export default function Home() {
                 {/* @ts-ignore */}
                 <Icon size={28} />
               </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color, marginBottom: 8 }}>{title}</div>
-              <div style={{ fontSize: 15, color: '#A1A1AA', lineHeight: 1.75 }}>{copy}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color, marginBottom: 10 }}>{title}</div>
+              <div style={{ fontSize: 16, color: '#A1A1AA', lineHeight: 1.75 }}>{copy}</div>
             </div>
             <button className="st-btn st-btn-primary" style={{ width: '100%' }} onClick={() => setPage(page)}>
               {btn}

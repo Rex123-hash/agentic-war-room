@@ -2,9 +2,16 @@ import { ShieldIcon } from '../../utils/icons'
 
 export default function AppHeader() {
   return (
-    <div className="flex items-start justify-between gap-4 mb-6">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm flex items-center justify-center text-white flex-shrink-0">
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: 8,
+          border: '1px solid rgba(255,255,255,0.20)',
+          background: 'rgba(255,255,255,0.10)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', flexShrink: 0,
+        }}>
           {/* @ts-ignore */}
           <ShieldIcon size={28} />
         </div>
