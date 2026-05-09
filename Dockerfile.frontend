@@ -4,8 +4,7 @@ WORKDIR /app
 COPY stratify-react/package.json stratify-react/package-lock.json ./
 RUN npm ci
 COPY stratify-react/ .
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
+# .env.production is written by deploy.sh before this build runs
 RUN npm run build
 
 # Serve stage
