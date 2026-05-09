@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PROJECT_ID="${1:-agentic-war-room}"
+PROJECT_ID="${1:-project-track-1-491917}"
 REGION="us-central1"
 
 echo "=== Setting active project: $PROJECT_ID ==="
@@ -25,7 +25,7 @@ GEMINI_MODEL=gemini-2.5-flash,\
 GEMINI_FALLBACK_MODEL=gemini-2.5-flash-lite,\
 USE_FIRESTORE=true,\
 FIRESTORE_DATABASE_ID=war-room-id,\
-FIRESTORE_PROJECT_ID=${PROJECT_ID},\
+FIRESTORE_PROJECT_ID=project-track-1-491917,\
 ALLOYDB_DATABASE=warroom_db"
 
 echo "=== Getting backend URL ==="
