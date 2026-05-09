@@ -136,21 +136,28 @@ def parse_summary(summary: str):
         "recommendations": [],
     }
 
+    def clean(line: str) -> str:
+        return line.strip().lstrip("#").strip().strip("*").strip(":").strip()
+
     lines = [line.strip() for line in summary.splitlines() if line.strip()]
     current = None
 
     for line in lines:
-        if line.startswith("Status:"):
-            sections["status"] = line.replace("Status:", "").strip()
-        elif line.startswith("Red Flags:"):
+        stripped = line.strip("*").strip("#").strip()
+
+        if "Status:" in line:
+            val = line.split("Status:", 1)[-1].strip().strip("*").strip()
+            if val:
+                sections["status"] = val
+        elif any(stripped.startswith(h) for h in ("Red Flags", "Red flags")):
             current = "red_flags"
-        elif line.startswith("Actions Taken:"):
+        elif any(stripped.startswith(h) for h in ("Actions Taken", "Actions taken")):
             current = "actions"
-        elif line.startswith("Recommendations:"):
+        elif stripped.startswith("Recommendations"):
             current = "recommendations"
-        elif line.startswith("-"):
-            value = line.lstrip("-").strip()
-            if current and value:
+        elif line.startswith(("-", "*", "•")) or (len(line) > 2 and line[0].isdigit() and line[1] in ".):"):
+            value = line.lstrip("-*•0123456789.)").strip().strip("*").strip()
+            if current and value and not value.endswith(":"):
                 sections[current].append(value)
 
     return sections
