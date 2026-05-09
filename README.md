@@ -92,13 +92,15 @@ python main.py
 # Server starts at http://localhost:8080
 ```
 
-**Terminal 2 — Frontend (Streamlit Dashboard)**
+**Terminal 2 — Frontend (React Dashboard)**
 ```bash
-streamlit run frontend/app.py
-# Dashboard opens at http://localhost:8501
+cd stratify-react
+npm install
+npm run dev
+# Dashboard opens at http://localhost:3000
 ```
 
-The frontend will automatically connect to the backend. You'll see the access screen (if auth is enabled), then the main dashboard.
+The React frontend will automatically connect to the backend at `http://localhost:8080`. You'll see the access screen (if auth is enabled), then the interactive dashboard.
 
 ---
 
@@ -173,10 +175,7 @@ agentic-war-room/
 │   ├── vector_store.py         # Embeddings for search
 │   └── db_setup.py             # Initialization
 │
-├── frontend/                    # Streamlit UI
-│   └── app.py                  # Dashboard interface
-│
-├── stratify-react/             # React Dashboard (Modern UI)
+├── stratify-react/             # React Dashboard (Primary UI)
 │   ├── src/
 │   │   ├── api/                # Backend API client
 │   │   ├── components/         # React components
@@ -188,13 +187,12 @@ agentic-war-room/
 ├── mcp_servers/                # Model Context Protocol
 │   └── stratify_mcp_server.py  # MCP endpoint
 │
-├── main.py                     # FastAPI server entry point
-├── app.py                      # Legacy Flask app (optional)
+├── main.py                     # FastAPI backend server
 ├── requirements.txt            # Python dependencies
 ├── .env                        # Environment variables template
 ├── Dockerfile                  # Backend container
-├── Dockerfile.frontend         # Frontend container
-└── deploy.sh                   # Cloud Run deployment script
+├── deploy.sh                   # Cloud Run deployment script
+└── README.md                   # This file
 ```
 
 ---
@@ -206,7 +204,7 @@ agentic-war-room/
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Frontend** | Streamlit + React | Interactive dashboard UI |
+| **Frontend** | React + TypeScript + Vite | Modern interactive dashboard UI |
 | **Backend** | FastAPI + Uvicorn | High-performance REST API |
 | **AI Orchestration** | Google ADK | Multi-agent coordination |
 | **LLM Model** | Gemini 2.5 Flash | Primary reasoning engine |
