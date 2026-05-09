@@ -16,19 +16,19 @@
 ## 📋 Table of Contents
 
 - [What is Stratify?](#what-is-stratify)
-- [✨ Features](#-features)
-- [🚀 Quick Start](#-quick-start)
-- [🏗️ Architecture](#-architecture)
-- [📁 Project Structure](#-project-structure)
-- [🛠️ Tech Stack](#-tech-stack)
-- [⚙️ Configuration](#-configuration)
-- [🔧 Development Setup](#-development-setup)
-- [☁️ Cloud Deployment](#-cloud-deployment)
-- [🔌 API Reference](#-api-reference)
-- [📚 Documentation](#-documentation)
-- [🐛 Troubleshooting](#-troubleshooting)
-- [👥 Team](#-team)
-- [📄 License](#-license)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Configuration](#configuration)
+- [Development Setup](#development-setup)
+- [Cloud Deployment](#cloud-deployment)
+- [API Reference](#api-reference)
+- [Documentation](#documentation)
+- [Troubleshooting](#troubleshooting)
+- [Team](#team)
+- [License](#license)
 
 ---
 
