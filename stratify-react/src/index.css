@@ -139,6 +139,16 @@ body {
 .feature-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: #A1A1AA; line-height: 1.7; }
 .feature-list li::before { content: ""; width: 8px; height: 8px; border-radius: 999px; margin-top: 7px; flex: 0 0 8px; background: #FAFAFA; }
 
+/* spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+.st-spinner {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(232,255,240,0.25);
+  border-top-color: #E8FFF0;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
 /* conversation */
 .conv-item {
   display: flex; gap: 10px; align-items: flex-start;

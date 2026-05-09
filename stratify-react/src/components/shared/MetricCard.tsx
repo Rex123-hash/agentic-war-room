@@ -36,7 +36,7 @@ export default function MetricCard({ Icon, label, value, sub, color }: Props) {
           <p style={{ margin: 0, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#71717A', whiteSpace: 'nowrap' }}>
             {label}
           </p>
-          <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: '#FAFAFA', lineHeight: 1.1 }}>
+          <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#FAFAFA', lineHeight: 1.1 }}>
             {value}
           </p>
         </div>

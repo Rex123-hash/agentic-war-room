@@ -53,6 +53,15 @@ export default function Agents() {
 
   const lastSix = history.slice(-6)
 
+  function cleanPreview(content: string): string {
+    return content
+      .replace(/EXECUTIVE SUMMARY[\s=]*/gi, '')
+      .replace(/={3,}/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+      .slice(0, 260)
+  }
+
   return (
     <div className="page-fade">
       <PageHeader
@@ -105,13 +114,13 @@ export default function Agents() {
           {/* Action buttons */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
             <button className="st-btn st-btn-primary" onClick={runAnalysis} disabled={loading}>
-              {loading && loadingMsg.includes('Coordinating') ? '⏳ Analyzing…' : 'Analyze Situation'}
+              {loading && loadingMsg.includes('Coordinating') ? 'Analyzing…' : 'Analyze Situation'}
             </button>
             <button className="st-btn" onClick={runDaily} disabled={loading}>
-              {loading && loadingMsg.includes('daily') ? '⏳ Running…' : 'Run Daily Auto Check'}
+              {loading && loadingMsg.includes('daily') ? 'Running…' : 'Run Daily Auto Check'}
             </button>
             <button className="st-btn" onClick={runMCP} disabled={loading}>
-              {loading && loadingMsg.includes('MCP') ? '⏳ Running…' : 'Run MCP Ops Check'}
+              {loading && loadingMsg.includes('MCP') ? 'Running…' : 'Run MCP Ops Check'}
             </button>
             <button className="st-btn" onClick={() => { clearChat(); setResult(null); setError('') }}>
               Clear
@@ -125,8 +134,9 @@ export default function Agents() {
           )}
 
           {loading && (
-            <div style={{ background: 'rgba(11,55,25,0.9)', border: '1px solid #1D4F2B', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#E8FFF0', marginBottom: 12 }}>
-              ⏳ {loadingMsg}
+            <div style={{ background: 'rgba(11,55,25,0.9)', border: '1px solid #1D4F2B', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#E8FFF0', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="st-spinner" />
+              {loadingMsg}
             </div>
           )}
 
@@ -136,7 +146,7 @@ export default function Agents() {
             {lastSix.length > 0 ? lastSix.map((msg, i) => (
               <div key={i} className="conv-item">
                 <div className="conv-icon">{msg.role === 'user' ? '💬' : '✓'}</div>
-                <div style={{ fontSize: 14 }}>{msg.content.slice(0, 300)}{msg.content.length > 300 ? '…' : ''}</div>
+                <div style={{ fontSize: 14 }}>{cleanPreview(msg.content)}{msg.content.length > 260 ? '…' : ''}</div>
               </div>
             )) : (
               <div style={{ color: '#71717A', fontSize: 15, padding: '12px 0' }}>

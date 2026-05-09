@@ -11,52 +11,119 @@ const modeClass: Record<string, string> = {
 const statusColor: Record<string, string> = {
   RED: '#FF6A63', YELLOW: '#FFC72C', GREEN: '#47D46B',
 }
+const statusBg: Record<string, string> = {
+  RED: 'rgba(255,106,99,0.08)', YELLOW: 'rgba(255,199,44,0.08)', GREEN: 'rgba(71,212,107,0.08)',
+}
+const statusBorder: Record<string, string> = {
+  RED: 'rgba(255,106,99,0.25)', YELLOW: 'rgba(255,199,44,0.25)', GREEN: 'rgba(71,212,107,0.25)',
+}
+
+const cols = [
+  { key: 'red_flags' as const,       title: 'Red Flags',      color: '#FF6A63', bg: 'rgba(255,106,99,0.06)',  border: 'rgba(255,106,99,0.18)'  },
+  { key: 'actions' as const,         title: 'Actions Taken',  color: '#47D46B', bg: 'rgba(71,212,107,0.06)', border: 'rgba(71,212,107,0.18)' },
+  { key: 'recommendations' as const, title: 'Recommendations',color: '#5A93FF', bg: 'rgba(90,147,255,0.06)', border: 'rgba(90,147,255,0.18)' },
+]
 
 export default function StructuredResult({ summary, modeLabel }: Props) {
   const parsed = parseSummary(summary)
-  const color = statusColor[parsed.status.toUpperCase().trim()] ?? '#A1A1AA'
+  const status = parsed.status.toUpperCase().trim()
+  const sc = statusColor[status] ?? '#A1A1AA'
+  const sb = statusBg[status]    ?? 'rgba(161,161,170,0.08)'
+  const sbd = statusBorder[status] ?? 'rgba(161,161,170,0.20)'
+
+  const hasData = cols.some(c => parsed[c.key].length > 0)
 
   return (
-    <div
-      style={{
-        background: 'rgba(0,0,0,0.40)', border: '1px solid rgba(255,255,255,0.10)',
-        borderRadius: 12, padding: 24, backdropFilter: 'blur(10px)', marginTop: 16,
-      }}
-    >
-      <span className={`mode-pill ${modeClass[modeLabel] ?? 'mode-interactive'}`}>
-        {modeLabel} MODE
-      </span>
+    <div style={{ marginTop: 16, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.10)', boxShadow: '0 24px 48px rgba(0,0,0,0.22)' }}>
 
-      {parsed.status && (
-        <div style={{ fontSize: 14, marginBottom: 12 }}>
-          Status: <strong style={{ color }}>{parsed.status}</strong>
+      {/* ── Header bar ─────────────────────────────── */}
+      <div style={{
+        background: 'rgba(0,0,0,0.55)', padding: '14px 20px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className={`mode-pill ${modeClass[modeLabel] ?? 'mode-interactive'}`} style={{ margin: 0, fontSize: 10 }}>
+            {modeLabel} MODE
+          </span>
+          <span style={{ color: '#52525B', fontSize: 13 }}>Executive Summary</span>
         </div>
-      )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 1fr', gap: 24 }}>
-        {[
-          { title: 'Red Flags', items: parsed.red_flags, color: '#FF6A63' },
-          { title: 'Actions Taken', items: parsed.actions, color: '#47D46B' },
-          { title: 'Recommendations', items: parsed.recommendations, color: '#5A93FF' },
-        ].map(({ title, items, color: c }) => (
-          <div key={title}>
-            <div style={{ fontWeight: 700, marginBottom: 8, fontSize: 14, color: c }}>{title}</div>
-            {items.length > 0 ? (
-              <div className="flex flex-col gap-1.5">
-                {items.map((item, i) => (
-                  <div key={i} className="signal-item" style={{ fontSize: 13 }}>{item}</div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ color: '#71717A', fontSize: 13 }}>None reported.</div>
-            )}
+        {status && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: sb, border: `1px solid ${sbd}`,
+            borderRadius: 8, padding: '5px 13px',
+          }}>
+            <div style={{
+              width: 7, height: 7, borderRadius: '50%', background: sc,
+              boxShadow: `0 0 7px ${sc}`,
+            }} />
+            <span style={{ fontWeight: 700, fontSize: 12, letterSpacing: '0.05em', color: sc }}>
+              {status}
+            </span>
           </div>
-        ))}
+        )}
       </div>
 
-      {(parsed.red_flags.length === 0 && parsed.actions.length === 0 && parsed.recommendations.length === 0) && (
-        <pre style={{ whiteSpace: 'pre-wrap', fontSize: 13, color: '#A1A1AA', lineHeight: 1.7 }}>{summary}</pre>
-      )}
+      {/* ── Body ───────────────────────────────────── */}
+      <div style={{ background: 'rgba(0,0,0,0.28)', padding: 20 }}>
+        {hasData ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 1fr', gap: 18 }}>
+            {cols.map(({ key, title, color, bg, border }) => {
+              const items = parsed[key]
+              return (
+                <div key={key}>
+                  {/* Column header */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    marginBottom: 12, paddingBottom: 10,
+                    borderBottom: `1px solid ${border}`,
+                  }}>
+                    <div style={{ width: 3, height: 14, borderRadius: 2, background: color, flexShrink: 0 }} />
+                    <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: '0.07em', textTransform: 'uppercase', color }}>
+                      {title}
+                    </span>
+                    {items.length > 0 && (
+                      <span style={{
+                        marginLeft: 'auto', fontSize: 11, fontWeight: 700,
+                        background: bg, border: `1px solid ${border}`,
+                        color, borderRadius: 999, padding: '1px 7px',
+                      }}>
+                        {items.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Items */}
+                  {items.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                      {items.map((item, i) => (
+                        <div key={i} style={{
+                          background: bg,
+                          border: `1px solid ${border}`,
+                          borderLeft: `3px solid ${color}`,
+                          borderRadius: 8,
+                          padding: '9px 12px',
+                          fontSize: 13, color: '#D4D4D8', lineHeight: 1.55,
+                        }}>
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ color: '#52525B', fontSize: 13, fontStyle: 'italic' }}>None reported.</div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <pre style={{ whiteSpace: 'pre-wrap', fontSize: 13, color: '#A1A1AA', lineHeight: 1.7, margin: 0 }}>
+            {summary}
+          </pre>
+        )}
+      </div>
     </div>
   )
 }
