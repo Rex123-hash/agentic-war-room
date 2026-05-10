@@ -4,8 +4,8 @@
 
 **AI-powered project operations — describe the situation, the agents handle the rest.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Frontend-blue?style=for-the-badge&logo=streamlit)](https://stratify-frontend-868361801548.asia-south1.run.app)
-[![API Backend](https://img.shields.io/badge/API-Backend-green?style=for-the-badge&logo=fastapi)](https://stratify-backend-868361801548.asia-south1.run.app/health)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Frontend-blue?style=for-the-badge&logo=react)](https://stratify-frontend-868361801548.us-central1.run.app)
+[![API Backend](https://img.shields.io/badge/API-Backend-green?style=for-the-badge&logo=fastapi)](https://stratify-api-868361801548.us-central1.run.app)
 [![Built with Google ADK](https://img.shields.io/badge/Google%20ADK-Multi--Agent-orange?style=for-the-badge&logo=google-cloud)](https://cloud.google.com/vertex-ai)
 [![Gemini 2.5 Flash](https://img.shields.io/badge/Model-Gemini%202.5%20Flash-purple?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemini/)
 
@@ -95,11 +95,15 @@ python main.py
 ```bash
 cd stratify-react
 npm install
+
+# Point local dev at the deployed backend (optional — skips running backend locally)
+echo "VITE_API_URL=https://stratify-api-868361801548.us-central1.run.app" > .env.local
+
 npm run dev
 # Dashboard opens at http://localhost:3000
 ```
 
-The React frontend will automatically connect to the backend at `http://localhost:8080`. You'll see the access screen (if auth is enabled), then the interactive dashboard.
+The React frontend proxies API calls to the backend. Set `VITE_API_URL` in `.env.local` to use the deployed Cloud Run backend, or leave it unset to use a locally running `main.py`.
 
 ---
 
@@ -327,11 +331,13 @@ python main.py
 
 ```bash
 # Terminal 2
-streamlit run frontend/app.py
+cd stratify-react
+npm install
+npm run dev
 
 # Should output:
-# You can now view your Streamlit app in your browser.
-# Local URL: http://localhost:8501
+# VITE ready in Xms
+# Local:   http://localhost:3000/
 ```
 
 ### Testing an Analysis
@@ -360,43 +366,50 @@ Expected response:
 <details open>
 <summary><b>Automated Deployment with deploy.sh</b></summary>
 
-The included `deploy.sh` automates the entire build & deploy pipeline:
+The included `deploy.sh` automates the entire build & deploy pipeline using **Cloud Build** (no local Docker required):
 
 ```bash
-./deploy.sh
+bash deploy.sh [PROJECT_ID]
+# Default project: project-track-1-491917
 ```
 
 This script:
-1. Reads your GCP project from `.env`
-2. Builds backend container
-3. Deploys backend to Cloud Run
-4. Builds frontend container
+1. Sets the active GCP project
+2. Deploys backend to Cloud Run via `gcloud run deploy --source`
+3. Captures the backend URL
+4. Writes `VITE_API_URL` into `stratify-react/.env.production`
 5. Deploys frontend to Cloud Run
-6. Returns live URLs
+6. Prints both live URLs
+
+### Live URLs
+
+| Service | URL |
+|---|---|
+| **Frontend** | https://stratify-frontend-868361801548.us-central1.run.app |
+| **Backend API** | https://stratify-api-868361801548.us-central1.run.app |
 
 ### Manual Deployment
 
 **Backend:**
 ```bash
-gcloud builds submit \
-  --tag asia-south1-docker.pkg.dev/PROJECT_ID/war-room/backend:latest
-
-gcloud run deploy stratify-backend \
-  --image asia-south1-docker.pkg.dev/PROJECT_ID/war-room/backend:latest \
-  --region asia-south1 \
+gcloud run deploy stratify-api \
+  --source . \
+  --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars "GOOGLE_CLOUD_PROJECT=PROJECT_ID,..."
+  --set-env-vars "GOOGLE_CLOUD_PROJECT=PROJECT_ID,GOOGLE_GENAI_USE_VERTEXAI=true,..."
 ```
 
 **Frontend:**
 ```bash
-gcloud builds submit --config Dockerfile.frontend \
-  --tag asia-south1-docker.pkg.dev/PROJECT_ID/war-room/frontend:latest
+# Swap Dockerfiles so Cloud Build picks the React one
+mv Dockerfile Dockerfile.backend && mv Dockerfile.frontend Dockerfile
 
 gcloud run deploy stratify-frontend \
-  --image asia-south1-docker.pkg.dev/PROJECT_ID/war-room/frontend:latest \
-  --region asia-south1 \
+  --source . \
+  --region us-central1 \
   --allow-unauthenticated
+
+mv Dockerfile Dockerfile.frontend && mv Dockerfile.backend Dockerfile
 ```
 
 </details>
@@ -487,7 +500,7 @@ Content-Type: application/json
 - [Google ADK Documentation](https://cloud.google.com/agents)
 - [Vertex AI API Reference](https://cloud.google.com/vertex-ai/docs)
 - [FastAPI Guide](https://fastapi.tiangolo.com/)
-- [Streamlit Documentation](https://docs.streamlit.io/)
+- [React + Vite Documentation](https://vitejs.dev/)
 - [Firestore Guide](https://cloud.google.com/firestore/docs)
 
 </details>
@@ -506,7 +519,7 @@ Error: "Failed to connect to http://localhost:8080"
 ```
 **Solution:**
 - Ensure `main.py` is running in Terminal 1
-- Check `STRATIFY_BACKEND_URL` in `.streamlit/config.toml`
+- Check `VITE_API_URL` in `stratify-react/.env.local`
 - Verify firewall isn't blocking port 8080
 
 ### Vertex AI Authentication Failed
